@@ -1,8 +1,9 @@
+import { yahooFetchRaw, USER_AGENT } from './yahooCrumb.js';
+
 const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
-const YAHOO_QUOTE_URL = 'https://query1.finance.yahoo.com/v7/finance/quote';
+const YAHOO_QUOTE_URL = 'https://query2.finance.yahoo.com/v7/finance/quote';
 const YAHOO_SEARCH_URL = 'https://query1.finance.yahoo.com/v1/finance/search';
 const COINBASE_CANDLES_URL = 'https://api.exchange.coinbase.com/products';
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 const MAX_CONCURRENT = 10;
 const INTRADAY_INTERVALS = new Set(['1m', '2m', '5m', '15m', '30m', '1h']);
 
@@ -71,9 +72,7 @@ export async function fetchChart(symbol, range, interval, includePrePost) {
     });
 
     const url = `${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}?${params}`;
-    const response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT },
-    });
+    const response = await yahooFetchRaw(url);
 
     if (!response.ok) {
       throw new Error(`Yahoo Finance API returned ${response.status}`);
@@ -114,9 +113,7 @@ export async function fetchChart(symbol, range, interval, includePrePost) {
 export async function fetchQuote(symbol) {
   return enqueue(async () => {
     const url = `${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}?interval=2m&range=1d&includePrePost=true`;
-    const response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT },
-    });
+    const response = await yahooFetchRaw(url);
 
     if (!response.ok) {
       throw new Error(`Yahoo Finance API returned ${response.status}`);
@@ -410,8 +407,7 @@ export async function fetchBatchQuotes(symbols) {
   for (const chunk of chunks) {
     try {
       const url = `${YAHOO_QUOTE_URL}?symbols=${chunk.join(',')}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,marketCap,regularMarketVolume,shortName,longName,earningsTimestamp,earningsTimestampStart,earningsTimestampEnd`;
-      const response = await fetch(url, {
-        headers: { 'User-Agent': USER_AGENT },
+      const response = await yahooFetchRaw(url, {
         signal: AbortSignal.timeout(12000),
       });
       if (!response.ok) continue;
@@ -444,9 +440,7 @@ export async function fetchNews(symbol) {
       listsCount: '0',
     });
 
-    const response = await fetch(`${YAHOO_SEARCH_URL}?${params}`, {
-      headers: { 'User-Agent': USER_AGENT },
-    });
+    const response = await yahooFetchRaw(`${YAHOO_SEARCH_URL}?${params}`);
 
     if (!response.ok) {
       throw new Error(`Yahoo Finance API returned ${response.status}`);

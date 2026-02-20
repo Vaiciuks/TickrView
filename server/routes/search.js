@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { withCache } from '../middleware/cache.js';
 
+import { yahooFetchRaw } from '../lib/yahooCrumb.js';
+
 const router = Router();
 
 const YAHOO_SEARCH_URL = 'https://query1.finance.yahoo.com/v1/finance/search';
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
 router.get('/', withCache(60), async (req, res, next) => {
   try {
@@ -14,8 +15,7 @@ router.get('/', withCache(60), async (req, res, next) => {
     }
 
     const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(q)}&quotesCount=8&newsCount=0&listsCount=0`;
-    const response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT },
+    const response = await yahooFetchRaw(url, {
       signal: AbortSignal.timeout(4000),
     });
 

@@ -1,16 +1,14 @@
 import { Router } from 'express';
 import { withCache } from '../middleware/cache.js';
+import { yahooFetchRaw } from '../lib/yahooCrumb.js';
 
 const router = Router();
 
 const YAHOO_SCREENER_URL = 'https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved';
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
 async function fetchMostActive() {
   const url = `${YAHOO_SCREENER_URL}?scrIds=most_actives&count=100`;
-  const response = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT },
-  });
+  const response = await yahooFetchRaw(url);
 
   if (!response.ok) {
     throw new Error(`Yahoo Finance API returned ${response.status}`);

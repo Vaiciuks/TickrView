@@ -1,7 +1,7 @@
 // Yahoo Finance crumb+cookie authentication
 // Required for v7/v10 endpoints (options, quoteSummary, quote)
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+export const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 let cachedCrumb = null;
 let cachedCookie = null;
@@ -64,7 +64,39 @@ export async function getYahooCrumb() {
   return { crumb: cachedCrumb, cookie: cachedCookie };
 }
 
-// Helper: fetch from Yahoo with crumb auth
+// Helper: fetch from Yahoo with crumb auth, returns raw Response object
+export async function yahooFetchRaw(url, options = {}) {
+  const { crumb, cookie } = await getYahooCrumb();
+  const separator = url.includes('?') ? '&' : '?';
+  const fullUrl = `${url}${separator}crumb=${encodeURIComponent(crumb)}`;
+
+  const res = await fetch(fullUrl, {
+    ...options,
+    headers: {
+      'User-Agent': USER_AGENT,
+      'Cookie': cookie,
+      ...(options.headers || {}),
+    },
+  });
+
+  if ((res.status === 401 || res.status === 403) && crumbExpiry > 0) {
+    crumbExpiry = 0;
+    const fresh = await getYahooCrumb();
+    const retryUrl = `${url}${separator}crumb=${encodeURIComponent(fresh.crumb)}`;
+    return fetch(retryUrl, {
+      ...options,
+      headers: {
+        'User-Agent': USER_AGENT,
+        'Cookie': fresh.cookie,
+        ...(options.headers || {}),
+      },
+    });
+  }
+
+  return res;
+}
+
+// Helper: fetch from Yahoo with crumb auth, returns parsed JSON
 export async function yahooAuthFetch(url) {
   const { crumb, cookie } = await getYahooCrumb();
   const separator = url.includes('?') ? '&' : '?';
@@ -79,8 +111,8 @@ export async function yahooAuthFetch(url) {
   });
 
   if (!res.ok) {
-    // If 401, invalidate cache and retry once
-    if (res.status === 401 && crumbExpiry > 0) {
+    // If 401/403, invalidate cache and retry once
+    if ((res.status === 401 || res.status === 403) && crumbExpiry > 0) {
       crumbExpiry = 0;
       const fresh = await getYahooCrumb();
       const retryUrl = `${url}${separator}crumb=${encodeURIComponent(fresh.crumb)}`;

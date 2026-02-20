@@ -2,9 +2,10 @@ import { Router } from 'express';
 import { withCache } from '../middleware/cache.js';
 import { SECTORS } from './heatmap.js';
 
+import { yahooFetchRaw } from '../lib/yahooCrumb.js';
+
 const router = Router();
 const FINNHUB_BASE = 'https://finnhub.io/api/v1';
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 const SCREENER_URL = 'https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved';
 
 function getApiKey() {
@@ -39,8 +40,7 @@ async function fetchFinnhubCalendar(from, to) {
 // Fetch stocks from a Yahoo screener (for price/market cap enrichment)
 async function fetchScreener(scrId, count = 100) {
   try {
-    const res = await fetch(`${SCREENER_URL}?scrIds=${scrId}&count=${count}`, {
-      headers: { 'User-Agent': USER_AGENT },
+    const res = await yahooFetchRaw(`${SCREENER_URL}?scrIds=${scrId}&count=${count}`, {
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return [];

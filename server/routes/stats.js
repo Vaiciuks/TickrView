@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { withCache } from '../middleware/cache.js';
 
+import { yahooFetchRaw, USER_AGENT } from '../lib/yahooCrumb.js';
+
 const router = Router();
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 const YAHOO_CHART_URL = 'https://query2.finance.yahoo.com/v8/finance/chart';
 const SA_URL = 'https://api.stockanalysis.com/api/symbol/s';
 
@@ -22,9 +23,9 @@ async function fetchStockAnalysis(symbol) {
 
 async function fetchChartMeta(symbol) {
   try {
-    const res = await fetch(
+    const res = await yahooFetchRaw(
       `${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}?interval=1d&range=5d&includePrePost=true`,
-      { headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(8000) }
+      { signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) return null;
     const json = await res.json();
