@@ -43,6 +43,7 @@ export function useStocks(endpoint, active = true) {
           } : {}),
         };
       }));
+      setLastUpdated(new Date());
     } catch {
       // ignore batch quote failures
     }
