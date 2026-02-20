@@ -700,7 +700,7 @@ function FearGreedGauge({ active, futures }) {
     fetch('/api/heatmap')
       .then(r => r.ok ? r.json() : null)
       .then(json => {
-        if (!mounted || !json) return;
+        if (!mounted || !json?.sectors) return;
         const allStocks = json.sectors.flatMap(s => s.industries.flatMap(i => i.stocks));
         const advancing = allStocks.filter(s => s.changePercent > 0.05).length;
         const total = allStocks.length;
@@ -838,7 +838,7 @@ function MarketBreadthWidget({ active }) {
     fetch('/api/heatmap')
       .then(r => r.ok ? r.json() : null)
       .then(json => {
-        if (!mounted || !json) return;
+        if (!mounted || !json?.sectors) return;
         const allStocks = json.sectors.flatMap(s => s.industries.flatMap(i => i.stocks));
         const advancing = allStocks.filter(s => s.changePercent > 0.05).length;
         const declining = allStocks.filter(s => s.changePercent < -0.05).length;
@@ -905,7 +905,7 @@ function HeatmapPreview({ active, onNavigate }) {
     let mounted = true;
     fetch('/api/heatmap')
       .then(r => r.ok ? r.json() : null)
-      .then(json => { if (mounted && json) setSectors(json.sectors); })
+      .then(json => { if (mounted && json?.sectors) setSectors(json.sectors); })
       .catch(() => {});
     return () => { mounted = false; };
   }, [active]);

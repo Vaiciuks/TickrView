@@ -3,7 +3,7 @@ import { formatPrice } from '../utils/formatters.js';
 import { useScrollLock } from '../hooks/useScrollLock.js';
 import StockLogo from './StockLogo.jsx';
 
-export default function GridDropdown({ label, stocks, onSelect }) {
+export default function GridDropdown({ label, stocks = [], onSelect }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 

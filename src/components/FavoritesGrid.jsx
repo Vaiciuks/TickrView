@@ -5,7 +5,7 @@ import StockCard from './StockCard.jsx';
 const LONG_PRESS_MS = 400;
 
 export default function FavoritesGrid({
-  favorites,
+  favorites = [],
   chartMap,
   onSelectStock,
   isFavorite,

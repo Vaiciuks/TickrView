@@ -116,7 +116,7 @@ export default function Heatmap({ theme }) {
         const res = await fetch('/api/heatmap');
         if (!res.ok) return;
         const json = await res.json();
-        if (mounted) {
+        if (mounted && json?.sectors) {
           setData(json.sectors);
           setLoading(false);
         }

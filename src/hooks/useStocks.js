@@ -61,7 +61,7 @@ export function useStocks(endpoint, active = true) {
       const data = await res.json();
 
       // Screener data for list management (which stocks to show, ordering)
-      setStocks(data.stocks);
+      setStocks(data.stocks || []);
       setLastUpdated(new Date());
       setError(null);
 

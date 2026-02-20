@@ -26,7 +26,7 @@ export default function NewsPopover({ articles, onClose }) {
         <span className="news-popover-title">Recent News</span>
         <button className="news-popover-close" onClick={onClose} aria-label="Close news">&times;</button>
       </div>
-      {articles.map((article, i) => (
+      {(articles || []).map((article, i) => (
         <a
           key={i}
           className="news-popover-item"

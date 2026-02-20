@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import gainersRouter from './routes/gainers.js';
 import chartRouter from './routes/chart.js';
 import quoteRouter from './routes/quote.js';
@@ -32,6 +33,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+app.use(compression());
 app.use(express.json());
 
 app.use('/api/user', userRouter);
