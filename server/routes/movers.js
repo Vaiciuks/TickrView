@@ -58,7 +58,7 @@ async function fetchTV(body) {
   return res.json();
 }
 
-router.get('/', withCache(30), async (req, res, next) => {
+router.get('/', withCache(15), async (req, res, next) => {
   try {
     const session = req.query.session === 'pre' ? 'pre' : 'post';
     const pfx = session === 'pre' ? 'premarket' : 'postmarket';
