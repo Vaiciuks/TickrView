@@ -404,9 +404,9 @@ export async function fetchCryptoChart(symbol, granularity = 60) {
   }));
 }
 
-// Batch quote fetch — returns map of { symbol: { price, change, changePercent, marketCap } }
+// Batch quote fetch — returns map of { symbol: { price, change, changePercent, marketCap, ... } }
+// Single request fetches up to 150 symbols — dramatically reduces Yahoo API calls
 export async function fetchBatchQuotes(symbols) {
-  // Yahoo v7 supports up to ~200 symbols per request
   const chunks = [];
   for (let i = 0; i < symbols.length; i += 150) {
     chunks.push(symbols.slice(i, i + 150));
@@ -415,7 +415,7 @@ export async function fetchBatchQuotes(symbols) {
   const results = new Map();
   for (const chunk of chunks) {
     try {
-      const url = `${YAHOO_QUOTE_URL}?symbols=${chunk.join(',')}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,marketCap,regularMarketVolume,shortName,longName,earningsTimestamp,earningsTimestampStart,earningsTimestampEnd`;
+      const url = `${YAHOO_QUOTE_URL}?symbols=${chunk.join(',')}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,marketCap,regularMarketVolume,shortName,longName,earningsTimestamp,earningsTimestampStart,earningsTimestampEnd,postMarketPrice,postMarketChange,postMarketChangePercent,preMarketPrice,preMarketChange,preMarketChangePercent,marketState`;
       const response = await yahooFetchRaw(url, {
         signal: AbortSignal.timeout(12000),
       });
@@ -423,6 +423,21 @@ export async function fetchBatchQuotes(symbols) {
       const data = await response.json();
       const quotes = data.quoteResponse?.result || [];
       for (const q of quotes) {
+        // Determine extended hours data
+        const state = (q.marketState || '').toUpperCase();
+        let extPrice = null, extChange = null, extChangePercent = null, extMarketState = null;
+        if ((state === 'POST' || state === 'POSTPOST' || state === 'CLOSED') && q.postMarketPrice) {
+          extPrice = q.postMarketPrice;
+          extChange = q.postMarketChange;
+          extChangePercent = q.postMarketChangePercent;
+          extMarketState = 'post';
+        } else if (state === 'PRE' && q.preMarketPrice) {
+          extPrice = q.preMarketPrice;
+          extChange = q.preMarketChange;
+          extChangePercent = q.preMarketChangePercent;
+          extMarketState = 'pre';
+        }
+
         results.set(q.symbol, {
           price: q.regularMarketPrice,
           change: q.regularMarketChange,
@@ -431,6 +446,7 @@ export async function fetchBatchQuotes(symbols) {
           volume: q.regularMarketVolume,
           earningsDate: q.earningsTimestamp || q.earningsTimestampStart || null,
           shortName: q.shortName || q.longName || q.symbol,
+          extPrice, extChange, extChangePercent, extMarketState,
         });
       }
     } catch {

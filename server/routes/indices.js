@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { withCache } from '../middleware/cache.js';
-import { fetchQuote } from '../lib/yahooFetch.js';
+import { fetchBatchQuotes } from '../lib/yahooFetch.js';
 
 const router = Router();
 
@@ -33,17 +33,15 @@ const INDICES_SYMBOLS = [
 
 router.get('/', withCache(15), async (req, res, next) => {
   try {
-    const results = await Promise.allSettled(
-      INDICES_SYMBOLS.map(sym => fetchQuote(sym))
-    );
+    const quotesMap = await fetchBatchQuotes(INDICES_SYMBOLS);
 
-    const stocks = results
-      .filter(r => r.status === 'fulfilled' && r.value)
-      .map(r => {
-        const q = r.value;
+    const stocks = INDICES_SYMBOLS
+      .filter(sym => quotesMap.has(sym))
+      .map(sym => {
+        const q = quotesMap.get(sym);
         return {
-          symbol: q.symbol,
-          name: q.name,
+          symbol: sym,
+          name: q.shortName || sym,
           price: q.price,
           change: q.change,
           changePercent: q.changePercent,

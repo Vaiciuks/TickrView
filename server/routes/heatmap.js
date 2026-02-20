@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { withCache } from '../middleware/cache.js';
-import { fetchQuote } from '../lib/yahooFetch.js';
+import { fetchBatchQuotes } from '../lib/yahooFetch.js';
 
 const router = Router();
 
@@ -295,15 +295,7 @@ const ALL_SYMBOLS = SECTORS.flatMap(s =>
 
 router.get('/', withCache(60), async (req, res, next) => {
   try {
-    const results = await Promise.allSettled(
-      ALL_SYMBOLS.map(sym => fetchQuote(sym))
-    );
-    const quotes = new Map();
-    results.forEach((r, i) => {
-      if (r.status === 'fulfilled' && r.value) {
-        quotes.set(ALL_SYMBOLS[i], r.value);
-      }
-    });
+    const quotes = await fetchBatchQuotes(ALL_SYMBOLS);
 
     const sectors = SECTORS.map(sector => ({
       name: sector.name,
