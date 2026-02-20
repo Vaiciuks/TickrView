@@ -54,9 +54,27 @@ export function useStocks(endpoint, active = true) {
       const res = await fetch(endpoint);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      const incoming = data.stocks || [];
 
-      // Screener data for list management (which stocks to show, ordering)
-      setStocks(data.stocks || []);
+      if (isInitial) {
+        // First load — use server data as-is
+        setStocks(incoming);
+      } else {
+        // Subsequent refreshes — merge new list membership/ordering with
+        // existing prices so we don't overwrite fresh quote-polled prices
+        // with potentially stale cached list data
+        setStocks(prev => {
+          const priceMap = new Map(prev.map(s => [s.symbol, s]));
+          return incoming.map(s => {
+            const existing = priceMap.get(s.symbol);
+            if (!existing) return s;
+            return { ...s, price: existing.price, change: existing.change,
+              changePercent: existing.changePercent, volume: existing.volume,
+              extPrice: existing.extPrice, extChange: existing.extChange,
+              extChangePercent: existing.extChangePercent, extMarketState: existing.extMarketState };
+          });
+        });
+      }
       setLastUpdated(new Date());
       setError(null);
     } catch (err) {

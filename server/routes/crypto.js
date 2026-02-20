@@ -14,7 +14,7 @@ const CRYPTO_SYMBOLS = [
   'DOGE-USD',  // Dogecoin
 ];
 
-router.get('/', withCache(30), async (req, res, next) => {
+router.get('/', withCache(10), async (req, res, next) => {
   try {
     const quotesMap = await fetchBatchQuotes(CRYPTO_SYMBOLS);
 
