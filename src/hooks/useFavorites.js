@@ -115,19 +115,20 @@ export function useFavorites(gainers, losers, trending = [], futures = [], crypt
   // Find symbols that need independent polling (not in gainers/losers)
   const missingSymbols = symbols.filter(s => !knownMap.current[s]);
 
-  // Fetch a single quote for a missing favorite
-  const fetchQuote = useCallback(async (symbol) => {
+  // Batch-fetch all missing favorites in a single API call
+  const fetchMissingQuotes = useCallback(async (syms) => {
+    if (syms.length === 0) return;
     try {
-      const res = await fetch(`/api/quote/${encodeURIComponent(symbol)}`);
+      const res = await fetch(`/api/quotes?symbols=${encodeURIComponent(syms.join(','))}`);
       if (!res.ok) return;
-      const quote = await res.json();
-      setExtraQuotes(prev => ({ ...prev, [symbol]: quote }));
+      const quotes = await res.json();
+      setExtraQuotes(prev => ({ ...prev, ...quotes }));
     } catch {
       // ignore
     }
   }, []);
 
-  // Poll missing symbols on a shuffled queue
+  // Poll missing symbols with batch fetching
   useEffect(() => {
     if (missingSymbols.length === 0) {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -135,19 +136,11 @@ export function useFavorites(gainers, losers, trending = [], futures = [], crypt
     }
 
     // Initial fetch for all missing
-    missingSymbols.forEach(s => fetchQuote(s));
+    fetchMissingQuotes(missingSymbols);
 
-    const pollNext = () => {
-      if (queueRef.current.length === 0) {
-        queueRef.current = [...missingSymbols].sort(() => Math.random() - 0.5);
-      }
-      const sym = queueRef.current.shift();
-      if (sym) fetchQuote(sym);
-    };
-
-    pollRef.current = setInterval(pollNext, QUOTE_POLL_MS);
+    pollRef.current = setInterval(() => fetchMissingQuotes(missingSymbols), QUOTE_POLL_MS);
     return () => clearInterval(pollRef.current);
-  }, [missingSymbols.join(','), fetchQuote]);
+  }, [missingSymbols.join(','), fetchMissingQuotes]);
 
   // Build favorites array: prefer gainers/losers data, fallback to extraQuotes
   const favorites = symbols
