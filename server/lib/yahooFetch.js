@@ -4,8 +4,7 @@ const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
 const YAHOO_QUOTE_URL = 'https://query2.finance.yahoo.com/v7/finance/quote';
 const YAHOO_SEARCH_URL = 'https://query1.finance.yahoo.com/v1/finance/search';
 const COINBASE_CANDLES_URL = 'https://api.exchange.coinbase.com/products';
-const MAX_CONCURRENT = 5;
-const MIN_DELAY_MS = 150; // Minimum ms between Yahoo requests to avoid 429s
+const MAX_CONCURRENT = 10;
 const INTRADAY_INTERVALS = new Set(['1m', '2m', '5m', '15m', '30m', '1h']);
 
 const etHourFormatter = new Intl.DateTimeFormat('en-US', {
@@ -41,20 +40,12 @@ function clipExtremeWicks(candles) {
 }
 
 let activeRequests = 0;
-let lastRequestTime = 0;
 const queue = [];
 
 function processQueue() {
   while (queue.length > 0 && activeRequests < MAX_CONCURRENT) {
-    const now = Date.now();
-    const elapsed = now - lastRequestTime;
-    if (elapsed < MIN_DELAY_MS) {
-      setTimeout(processQueue, MIN_DELAY_MS - elapsed);
-      return;
-    }
     const { fn, resolve, reject } = queue.shift();
     activeRequests++;
-    lastRequestTime = Date.now();
     fn()
       .then(resolve)
       .catch(reject)

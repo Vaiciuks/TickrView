@@ -4,7 +4,7 @@ import { fetchQuote } from '../lib/yahooFetch.js';
 
 const router = Router();
 
-router.get('/:symbol', withCache(5), async (req, res, next) => {
+router.get('/:symbol', withCache(2), async (req, res, next) => {
   try {
     const { symbol } = req.params;
 
