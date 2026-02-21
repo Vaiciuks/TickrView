@@ -1282,9 +1282,13 @@ export default function ExpandedChart({ stock, onClose, isFavorite, onToggleFavo
                 </svg>
                 {alerts.length > 0 && <span className="alert-count">{alerts.length}</span>}
               </button>
-              {showAlertInput && createPortal(
-                <div className="alert-overlay" onClick={() => setShowAlertInput(false)}>
-                  <div className="alert-popover" onClick={e => e.stopPropagation()}>
+              {showAlertInput && (
+                <>
+                  {createPortal(
+                    <div className="alert-backdrop" onClick={() => setShowAlertInput(false)} />,
+                    document.body
+                  )}
+                  <div className="alert-popover">
                     <div className="alert-popover-title">Set Price Alert</div>
                     <div className="alert-popover-row">
                       <select value={alertDirection} onChange={e => setAlertDirection(e.target.value)} className="alert-direction">
@@ -1321,8 +1325,7 @@ export default function ExpandedChart({ stock, onClose, isFavorite, onToggleFavo
                       </div>
                     )}
                   </div>
-                </div>,
-                document.body
+                </>
               )}
             </div>
           )}

@@ -2234,25 +2234,24 @@ button, a, input, select, textarea {
   line-height: 14px;
 }
 
-.alert-overlay {
+.alert-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 300;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 120px;
+  z-index: 199;
 }
 
 .alert-popover {
-  position: relative;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   padding: 12px;
-  z-index: 301;
+  z-index: 200;
   min-width: 210px;
   box-shadow: var(--glass-shadow);
   animation: panelSlideIn 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -5851,45 +5850,9 @@ button, a, input, select, textarea {
     right: 10px;
   }
 
-  .alert-overlay {
-    align-items: flex-end;
-    padding-top: 0;
-    background: rgba(0, 0, 0, 0.4);
-  }
-
   .alert-popover {
-    width: 100%;
-    border-radius: 16px 16px 0 0;
-    padding: 20px 16px calc(env(safe-area-inset-bottom, 8px) + 12px);
-    animation: alertSlideUp 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-
-  .alert-popover-title {
-    font-size: 13px;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--glass-border);
-  }
-
-  .alert-popover-row {
-    gap: 8px;
-  }
-
-  .alert-price-input {
-    flex: 1;
-    padding: 8px 12px;
-  }
-
-  .alert-direction {
-    padding: 8px 10px;
-    font-size: 14px;
-  }
-
-  .alert-add-btn {
-    padding: 8px 16px;
-    font-size: 13px;
+    left: auto;
+    right: 0;
   }
 
   .chart-tooltip {
