@@ -30,6 +30,7 @@ import congressTradingRouter from './routes/congressTrading.js';
 import govContractsRouter from './routes/govContracts.js';
 import lobbyingRouter from './routes/lobbying.js';
 import darkPoolRouter from './routes/darkPool.js';
+import wsbRouter from './routes/wsb.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -67,6 +68,7 @@ app.use('/api/congress-trading', congressTradingRouter);
 app.use('/api/gov-contracts', govContractsRouter);
 app.use('/api/lobbying', lobbyingRouter);
 app.use('/api/dark-pool', darkPoolRouter);
+app.use('/api/wsb', wsbRouter);
 
 // Diagnostic endpoint — tests Yahoo connectivity from server
 app.get('/api/health', async (req, res) => {

@@ -6,8 +6,10 @@ import CongressTrading from './CongressTrading.jsx';
 import GovContracts from './GovContracts.jsx';
 import Lobbying from './Lobbying.jsx';
 import DarkPool from './DarkPool.jsx';
+import WallStreetBets from './WallStreetBets.jsx';
 
 const SUB_TABS = [
+  { key: 'wsb', label: 'WSB' },
   { key: 'insider', label: 'Insider Trading' },
   { key: 'options', label: 'Options Flow' },
   { key: 'short', label: 'Short Interest' },
@@ -25,10 +27,11 @@ const SOURCE_NOTES = {
   govcontracts: 'Quiver Quantitative — federal government contracts awarded to public companies',
   lobbying: 'Quiver Quantitative — corporate lobbying disclosures filed with Congress',
   darkpool: 'Quiver Quantitative — FINRA off-exchange (dark pool) volume & short data',
+  wsb: 'ApeWisdom — Reddit mentions across WallStreetBets, r/stocks, r/investing & more',
 };
 
 export default function SmartMoney({ active, onSelectStock }) {
-  const [subTab, setSubTab] = useState('insider');
+  const [subTab, setSubTab] = useState('wsb');
 
   return (
     <main className="smartmoney-main">
@@ -70,6 +73,9 @@ export default function SmartMoney({ active, onSelectStock }) {
       )}
       {subTab === 'darkpool' && (
         <DarkPool active={active && subTab === 'darkpool'} onSelectStock={onSelectStock} />
+      )}
+      {subTab === 'wsb' && (
+        <WallStreetBets active={active && subTab === 'wsb'} onSelectStock={onSelectStock} />
       )}
     </main>
   );
