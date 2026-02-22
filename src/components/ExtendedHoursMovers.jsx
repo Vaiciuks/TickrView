@@ -110,10 +110,12 @@ export default function ExtendedHoursMovers({ active, onSelectStock }) {
     : detectedSession === 'market' ? 'pre'   // show most recent pre-market data
     : 'post';                                  // post or closed
   const [session, setSession] = useState(apiSession);
-  const { gainers, losers, loading, lastUpdated } = useMovers(active, session);
-
   const isMarketOpen = detectedSession === 'market';
   const isClosed = detectedSession === 'closed';
+  // Stop polling when the selected session isn't actively trading
+  const pollingStopped = (session === 'pre' && detectedSession !== 'pre')
+    || (session === 'post' && detectedSession !== 'post');
+  const { gainers, losers, loading, lastUpdated } = useMovers(active, session, isClosed || isMarketOpen || pollingStopped);
 
   const handleClick = (stock) => {
     if (onSelectStock) {

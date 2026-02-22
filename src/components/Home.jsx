@@ -763,45 +763,67 @@ function FearGreedGauge({ active, futures }) {
   const label = getScoreLabel(score);
   const color = getScoreColor(score);
 
-  // SVG semicircle gauge — clean gradient arc
+  // Fan/wedge gauge — 3D colored segments fanning from center hub
   const cx = 100;
-  const cy = 88;
-  const r = 68;
-  const strokeW = 12;
-  const scoreAngle = Math.PI - (score / 100) * Math.PI;
+  const cy = 100;
+  const outerR = 82;
+  const innerR = 36;
+  const hubR = 28;
 
-  // Needle
-  const needleTip = r + 6;
-  const needleBase = r - 18;
-  const ntx = cx + needleTip * Math.cos(scoreAngle);
-  const nty = cy - needleTip * Math.sin(scoreAngle);
-  const nbx = cx + needleBase * Math.cos(scoreAngle);
-  const nby = cy - needleBase * Math.sin(scoreAngle);
+  // Needle angle: score 0 → angle 0 (right/fear), score 100 → angle π (left/greed)
+  const needleAngle = (score / 100) * Math.PI;
 
-  // Zone arc paths (thin arcs with rounded ends)
-  const zones = [
-    { start: 0, end: 20, color: '#e01535' },
-    { start: 20, end: 40, color: '#f5652a' },
-    { start: 40, end: 60, color: '#f5a623' },
-    { start: 60, end: 80, color: '#8bc34a' },
-    { start: 80, end: 100, color: '#00d66b' },
+  // 7 wedge segments from left (greed) to right (fear)
+  const segColors = [
+    { base: '#00c853', light: '#69f0ae', dark: '#00701a' },
+    { base: '#43a047', light: '#76d275', dark: '#1b5e20' },
+    { base: '#7cb342', light: '#aee571', dark: '#4b830d' },
+    { base: '#fdd835', light: '#ffff6b', dark: '#c6a700' },
+    { base: '#ffb300', light: '#ffe54c', dark: '#c68400' },
+    { base: '#f4511e', light: '#ff8a50', dark: '#b91400' },
+    { base: '#c62828', light: '#ff5f52', dark: '#8e0000' },
   ];
+  const segCount = segColors.length;
+  const gapAngle = 0.03;
+  const totalGap = gapAngle * (segCount - 1);
+  const segSpan = (Math.PI - totalGap) / segCount;
 
-  const arcPath = (startPct, endPct) => {
-    const a1 = Math.PI - (startPct / 100) * Math.PI;
-    const a2 = Math.PI - (endPct / 100) * Math.PI;
-    const x1 = cx + r * Math.cos(a1);
-    const y1 = cy - r * Math.sin(a1);
-    const x2 = cx + r * Math.cos(a2);
-    const y2 = cy - r * Math.sin(a2);
-    return `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`;
+  // Build wedge path
+  const wedgePath = (a1, a2) => {
+    const x1o = cx + outerR * Math.cos(a1);
+    const y1o = cy - outerR * Math.sin(a1);
+    const x2o = cx + outerR * Math.cos(a2);
+    const y2o = cy - outerR * Math.sin(a2);
+    const x1i = cx + innerR * Math.cos(a1);
+    const y1i = cy - innerR * Math.sin(a1);
+    const x2i = cx + innerR * Math.cos(a2);
+    const y2i = cy - innerR * Math.sin(a2);
+    return `M ${x1o.toFixed(2)} ${y1o.toFixed(2)} A ${outerR} ${outerR} 0 0 1 ${x2o.toFixed(2)} ${y2o.toFixed(2)} L ${x2i.toFixed(2)} ${y2i.toFixed(2)} A ${innerR} ${innerR} 0 0 0 ${x1i.toFixed(2)} ${y1i.toFixed(2)} Z`;
   };
 
-  // Labels at edges
-  const lx0 = cx + (r + 16) * Math.cos(Math.PI);
-  const ly0 = cy - (r + 16) * Math.sin(Math.PI);
-  const lx100 = cx + (r + 16) * Math.cos(0);
-  const ly100 = cy - (r + 16) * Math.sin(0);
+  // Highlight arc (thinner, shifted inward from outer edge for glossy sheen)
+  const highlightR = outerR - 6;
+  const highlightArc = (a1, a2) => {
+    const x1 = cx + highlightR * Math.cos(a1);
+    const y1 = cy - highlightR * Math.sin(a1);
+    const x2 = cx + highlightR * Math.cos(a2);
+    const y2 = cy - highlightR * Math.sin(a2);
+    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${highlightR} ${highlightR} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  };
+
+  // Needle tip
+  const ntx = cx + (outerR + 5) * Math.cos(needleAngle);
+  const nty = cy - (outerR + 5) * Math.sin(needleAngle);
+  // Needle triangle base (perpendicular to needle direction)
+  const perpAngle = needleAngle + Math.PI / 2;
+  const baseW = 3.5;
+  const nb1x = cx + baseW * Math.cos(perpAngle);
+  const nb1y = cy - baseW * Math.sin(perpAngle);
+  const nb2x = cx - baseW * Math.cos(perpAngle);
+  const nb2y = cy + baseW * Math.sin(perpAngle);
+
+  // Which segment is the needle in?
+  const activeSegIdx = Math.min(segCount - 1, Math.floor((1 - score / 100) * segCount));
 
   return (
     <div className="home-feargreed">
@@ -809,80 +831,122 @@ function FearGreedGauge({ active, futures }) {
         <span className="home-section-title">Fear & Greed</span>
       </div>
       <div className="home-feargreed-gauge">
-        <svg viewBox="0 0 200 115" className="home-feargreed-svg">
+        <svg viewBox="0 0 200 125" className="home-feargreed-svg">
           <defs>
-            <filter id="fg-needle-shadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor={color} floodOpacity="0.6" />
+            {/* Per-segment radial gradients for 3D depth */}
+            {segColors.map((seg, i) => {
+              const midA = Math.PI - (i + 0.5) * (segSpan + gapAngle);
+              const gx = cx + (outerR * 0.6) * Math.cos(midA);
+              const gy = cy - (outerR * 0.6) * Math.sin(midA);
+              return (
+                <radialGradient key={`grad-${i}`} id={`fg-seg-${i}`} cx={gx / 200} cy={gy / 125} r="0.5" gradientUnits="objectBoundingBox">
+                  <stop offset="0%" stopColor={seg.light} />
+                  <stop offset="60%" stopColor={seg.base} />
+                  <stop offset="100%" stopColor={seg.dark} />
+                </radialGradient>
+              );
+            })}
+            {/* Hub 3D radial gradient */}
+            <radialGradient id="fg-hub-grad" cx="0.4" cy="0.35" r="0.6">
+              <stop offset="0%" stopColor="#2a2a3e" />
+              <stop offset="70%" stopColor="#12121a" />
+              <stop offset="100%" stopColor="#08080e" />
+            </radialGradient>
+            {/* Hub ring gradient */}
+            <radialGradient id="fg-hub-ring" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="80%" stopColor={color} stopOpacity="0.15" />
+              <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+            </radialGradient>
+            {/* Needle glow */}
+            <filter id="fg-needle-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor={color} floodOpacity="0.8" />
+            </filter>
+            {/* Shadow under gauge */}
+            <filter id="fg-shadow" x="-10%" y="-5%" width="120%" height="130%">
+              <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#000" floodOpacity="0.4" />
             </filter>
           </defs>
 
-          {/* Dim background track */}
+          {/* Shadow layer */}
+          <g filter="url(#fg-shadow)">
+            {/* Wedge segments with 3D gradient fills */}
+            {segColors.map((seg, i) => {
+              const a1 = Math.PI - i * (segSpan + gapAngle);
+              const a2 = a1 - segSpan;
+              const isActive = i === activeSegIdx;
+              return (
+                <path
+                  key={i}
+                  d={wedgePath(a1, a2)}
+                  fill={`url(#fg-seg-${i})`}
+                  opacity={isActive ? 1 : 0.4}
+                />
+              );
+            })}
+          </g>
+
+          {/* Glossy highlight arcs on each segment (top sheen) */}
+          {segColors.map((seg, i) => {
+            const a1 = Math.PI - i * (segSpan + gapAngle) - 0.02;
+            const a2 = a1 - segSpan + 0.04;
+            const isActive = i === activeSegIdx;
+            return (
+              <path
+                key={`hl-${i}`}
+                d={highlightArc(a1, a2)}
+                fill="none"
+                stroke="rgba(255,255,255,0.25)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                opacity={isActive ? 0.5 : 0.15}
+              />
+            );
+          })}
+
+          {/* Inner edge shadow (dark ring at inner radius for depth) */}
           <path
-            d={arcPath(0, 100)}
+            d={`M ${cx - innerR} ${cy} A ${innerR} ${innerR} 0 0 1 ${cx + innerR} ${cy}`}
             fill="none"
-            stroke="rgba(255,255,255,0.06)"
-            strokeWidth={strokeW}
-            strokeLinecap="round"
+            stroke="rgba(0,0,0,0.3)"
+            strokeWidth="3"
           />
 
-          {/* Colored zone arcs */}
-          {zones.map((z, i) => (
-            <path
-              key={i}
-              d={arcPath(z.start + 0.5, z.end - 0.5)}
-              fill="none"
-              stroke={z.color}
-              strokeWidth={strokeW}
-              strokeLinecap="round"
-              opacity="0.35"
-            />
-          ))}
-
-          {/* Active filled arc up to score */}
-          {zones.filter(z => z.start < score).map((z, i) => (
-            <path
-              key={`a-${i}`}
-              d={arcPath(z.start + 0.3, Math.min(z.end, score) - 0.3)}
-              fill="none"
-              stroke={z.color}
-              strokeWidth={strokeW}
-              strokeLinecap="round"
-              opacity="0.9"
-            />
-          ))}
-
-          {/* Edge labels */}
-          <text x={lx0 + 6} y={ly0 + 4} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7" fontWeight="600">0</text>
-          <text x={lx100 - 6} y={ly100 + 4} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7" fontWeight="600">100</text>
-
-          {/* Needle */}
-          <line
-            x1={nbx} y1={nby} x2={ntx} y2={nty}
-            stroke={color}
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            filter="url(#fg-needle-shadow)"
+          {/* Needle — solid triangle */}
+          <polygon
+            points={`${ntx.toFixed(2)},${nty.toFixed(2)} ${nb1x.toFixed(2)},${nb1y.toFixed(2)} ${nb2x.toFixed(2)},${nb2y.toFixed(2)}`}
+            fill="#fff"
+            filter="url(#fg-needle-glow)"
           />
-          <circle cx={cx} cy={cy} r="4" fill="#1a1a2e" stroke={color} strokeWidth="1.5" />
 
-          {/* Score */}
+          {/* Hub — 3D sphere */}
+          <circle cx={cx} cy={cy} r={hubR + 3} fill="url(#fg-hub-ring)" />
+          <circle cx={cx} cy={cy} r={hubR} fill="url(#fg-hub-grad)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          {/* Hub specular highlight */}
+          <ellipse cx={cx - 5} cy={cy - 6} rx="12" ry="8" fill="rgba(255,255,255,0.06)" />
+
+          {/* Score number */}
           <text
-            x={cx} y={cy - 18}
+            x={cx} y={cy + 1}
             textAnchor="middle"
+            dominantBaseline="central"
             fill={color}
-            fontSize="28"
+            fontSize="22"
             fontWeight="800"
             fontFamily="var(--font-mono)"
           >{score}</text>
 
-          {/* Label */}
+          {/* GREED / FEAR labels */}
+          <text x={22} y={cy + 10} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="6.5" fontWeight="700" letterSpacing="0.08em">GREED</text>
+          <text x={178} y={cy + 10} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="6.5" fontWeight="700" letterSpacing="0.08em">FEAR</text>
+
+          {/* Label below hub */}
           <text
-            x={cx} y={cy + 12}
+            x={cx} y={cy + hubR + 14}
             textAnchor="middle"
-            fill="rgba(255,255,255,0.45)"
+            fill="rgba(255,255,255,0.5)"
             fontSize="8"
             fontWeight="600"
-            letterSpacing="0.12em"
+            letterSpacing="0.1em"
           >{label.toUpperCase()}</text>
         </svg>
       </div>

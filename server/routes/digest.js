@@ -11,6 +11,21 @@ let cachedDigest = null;
 let cacheTime = 0;
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
+// Broad financial keyword filter — matches titles relevant to markets/finance
+const MARKET_RE = /\bstocks?\b|\bmarket|\bS&P\b|\bNasdaq|\bDow\b|\bshares\b|\brally|\bdrop(?:s|ped)?\b|\bfell\b|\brise[sd]?\b|\bsurg|\bplung|\bearnings|\bFed\b|\binflation|\bGDP\b|\bjobs?\s*(?:report|data|growth|market)|\bCPI\b|\btreasur|\boil\b|\bgold\b|\bbitcoin|\bcrypto|\bIPO\b|\bindex|\bbull\b|\bbear\b|\bselloff|\bsell-off|\brate\s*(?:cut|hike|hold)|\byield|\bbond|\bequit|\bfutures?\b|\bsector|\bupgrade|\bdowngrade|\banalyst|\bforecast|\brecession|\btariff|\btrade\s*(?:war|deal|deficit)|\bwall\s*street|\bretail\s*(?:sales|data)|\bunemployment|\bmerger|\bacquisition|\bbuyback|\bdividend|\brevenue|\bprofit|\bbanking|\blending|\binterest\s*rate|\bhedge\s*fund|\bETF|\bmutual\s*fund|\bcommodit|\bWTI|\bbrent|\bnatural\s*gas|\binvestor|\bportfolio|\bticker|\brout(?:ed)?\b|\btumbl/i;
+
+// Reject obviously non-financial content
+const JUNK_RE = /\bcelebrit|\bsports?\b|\bNFL\b|\bNBA\b|\bMLB\b|\bNHL\b|\bfootball\b|\bbasketball\b|\bsoccer\b|\brecipe|\bcooking\b|\bfashion\b|\bentertainment\b|\bmovie|\bTV\s*show|\bstreaming\b|\bNetflix\b(?!\s*(stock|share|earn|revenue|profit|surge|drop|rally))/i;
+
+function filterMarketArticles(articles) {
+  // First remove obvious non-financial junk
+  const cleaned = articles.filter(a => !JUNK_RE.test(a.title));
+  // Then prioritize articles that match financial keywords
+  const matched = cleaned.filter(a => MARKET_RE.test(a.title));
+  // Fall back to cleaned articles if not enough keyword matches
+  return matched.length >= 5 ? matched : cleaned.length >= 5 ? cleaned : articles;
+}
+
 async function generateDigest() {
   const now = Date.now();
   if (cachedDigest && now - cacheTime < CACHE_DURATION) {
@@ -22,10 +37,7 @@ async function generateDigest() {
     return null;
   }
 
-  // Filter to prioritize market-focused articles
-  const marketKeywords = /\bstock|market|\bS&P\b|Nasdaq|\bDow\b|\bshares\b|\brally|\bdrop|\bfell\b|\brise[sd]?\b|\bsurg|\bplung|\bearnings|\bFed\b|\binflation|\bGDP\b|\bjobs\b|\bCPI\b|\btreasur|\boil\b|\bgold\b|\bbitcoin|\bcrypto|\bIPO\b|\bindex|\bbull\b|\bbear\b|\bselloff|\bsell-off/i;
-  const marketArticles = articles.filter(a => marketKeywords.test(a.title));
-  const bestArticles = marketArticles.length >= 5 ? marketArticles : articles;
+  const bestArticles = filterMarketArticles(articles);
 
   const headlines = bestArticles.map(a => `- ${a.title} (${a.publisher})`).join('\n');
 
@@ -48,7 +60,7 @@ async function generateDigest() {
       max_tokens: 500,
       messages: [{
         role: 'user',
-        content: `You are a financial news editor writing today's market digest. Focus on what actually happened TODAY in the markets.
+        content: `You are a financial markets editor writing today's market digest for a stock trading dashboard. EVERY bullet must be about financial markets, stocks, economics, or investing.
 
 Today's headlines from financial news sources:
 ${headlines}
@@ -60,12 +72,14 @@ Respond in this exact JSON format (no markdown, no code fences, just raw JSON):
 }
 
 Rules:
-- The headline MUST describe today's specific market action (e.g. "S&P 500 rallies on strong jobs data" not "Markets remain volatile")
-- Include 6-8 bullet points about today's most important developments
-- Each bullet should be 1-2 sentences, factual and specific with numbers when available
-- Prioritize: index moves (S&P, Nasdaq, Dow), big stock movers, Fed/macro events, sector rotation, earnings, commodities
-- Ignore generic/evergreen articles — only include today's actionable developments
-- Do NOT include generic advice, opinions, or forward-looking predictions`
+- The headline MUST describe today's specific market action (e.g. "S&P 500 rallies 1.2% on strong jobs data" not "Markets remain volatile")
+- Include 6-8 bullet points covering ONLY financial/market developments
+- Each bullet should be 1-2 sentences, factual and specific with numbers/percentages when available
+- Prioritize in order: major index moves (S&P 500, Nasdaq, Dow), big individual stock movers and why, Fed/central bank actions, macro data (jobs, CPI, GDP), earnings results, sector rotation, commodities (oil, gold), crypto
+- STRICTLY IGNORE any headline about: sports, entertainment, celebrities, weather, lifestyle, politics unrelated to markets, technology products (unless it moves a stock), health/medical (unless pharma stock), crime, social media drama
+- If a headline is borderline, only include it if there is a clear stock/market impact
+- Do NOT include generic advice, opinions, or forward-looking predictions
+- Do NOT pad with filler — if only 6 market-relevant points exist, return 6 bullets, not 8`
       }],
     });
 
@@ -113,14 +127,15 @@ router.get('/', optionalAuth, withCache(300), async (req, res, next) => {
     const premium = await checkPremium(req);
 
     if (!premium) {
-      // Free tier: return raw headlines without AI summary
+      // Free tier: return filtered market-relevant headlines without AI summary
       const articles = await fetchMarketNews();
       if (!articles || articles.length === 0) {
         return res.json({ digest: null });
       }
+      const filtered = filterMarketArticles(articles);
       const digest = {
-        headline: articles[0].title,
-        bullets: articles.slice(1, 8).map(a => a.title),
+        headline: filtered[0].title,
+        bullets: filtered.slice(1, 8).map(a => a.title),
         timestamp: Math.floor(Date.now() / 1000),
       };
       return res.json({ digest });

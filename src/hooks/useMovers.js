@@ -3,7 +3,7 @@ import { QUOTE_POLL_MS } from '../utils/constants.js';
 
 const REFRESH_INTERVAL = 30_000; // list refresh every 30s
 
-export function useMovers(active, session) {
+export function useMovers(active, session, marketClosed = false) {
   const [gainers, setGainers] = useState([]);
   const [losers, setLosers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,17 +68,19 @@ export function useMovers(active, session) {
 
     setLoading(true);
     fetchMovers();
-    const id = setInterval(fetchMovers, REFRESH_INTERVAL);
+    // Poll less frequently when market is closed (no new data expected)
+    const interval = marketClosed ? 120_000 : REFRESH_INTERVAL;
+    const id = setInterval(fetchMovers, interval);
     return () => { mounted = false; clearInterval(id); };
-  }, [active, session]);
+  }, [active, session, marketClosed]);
 
-  // Quote polling (only when active)
+  // Quote polling (only when active AND market session is live)
   useEffect(() => {
-    if (!active) return;
+    if (!active || marketClosed) return;
     const delay = setTimeout(pollQuotes, 800);
     const id = setInterval(pollQuotes, QUOTE_POLL_MS);
     return () => { clearTimeout(delay); clearInterval(id); };
-  }, [active, pollQuotes]);
+  }, [active, pollQuotes, marketClosed]);
 
   return { gainers, losers, loading, lastUpdated };
 }
