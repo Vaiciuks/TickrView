@@ -1113,6 +1113,72 @@ button, a, input, select, textarea {
   text-align: right;
 }
 
+.hotkeys-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.hotkeys-tab {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.hotkeys-tab:hover { background: rgba(255,255,255,0.04); }
+.hotkeys-tab--active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.hotkeys-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hotkeys-guide-section h4 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.hotkeys-guide-section p {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.hotkeys-guide-section ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  list-style: none;
+}
+.hotkeys-guide-section li {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  padding: 1px 0;
+  position: relative;
+}
+.hotkeys-guide-section li::before {
+  content: '\2022';
+  color: var(--accent);
+  position: absolute;
+  left: -12px;
+}
+.hotkeys-guide-section strong {
+  color: var(--text-primary);
+}
+
 /* Stock Grid */
 .stock-grid {
   flex: 1 0 auto;

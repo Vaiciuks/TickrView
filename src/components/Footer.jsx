@@ -32,10 +32,15 @@ function PrivacyModal({ onClose }) {
 
       <h3>Information We Collect</h3>
       <p>
-        <strong>Local Storage Only:</strong> TickrPulse stores your preferences (such as
-        favorite stocks, selected tab, sidebar state, and theme settings) locally on your
-        device using browser localStorage. This data never leaves your device and is not
-        transmitted to our servers.
+        <strong>Account Data:</strong> If you create an account, we collect your email address
+        and a hashed password through our authentication provider (Supabase). Registered users
+        may also store favorites, price alerts, and stock notes — this data is stored securely
+        in our cloud database and associated with your account so it can sync across devices.
+      </p>
+      <p>
+        <strong>Local Storage:</strong> TickrPulse stores preferences (selected tab, sidebar
+        state, theme, recently viewed stocks, and timeframe settings) locally on your device
+        using browser localStorage. This data never leaves your device.
       </p>
       <p>
         <strong>Contact Form:</strong> If you choose to contact us, we collect only the
@@ -51,35 +56,69 @@ function PrivacyModal({ onClose }) {
 
       <h3>Information We Do Not Collect</h3>
       <p>
-        We do not collect, store, or sell personal information. We do not use tracking cookies,
+        We do not sell personal information. We do not use tracking cookies,
         third-party analytics, advertising trackers, or fingerprinting technologies. We do
-        not create user profiles or track your browsing behavior across other websites.
-        We do not collect financial information, trading data, or investment details from users.
+        not create behavioral profiles or track your browsing across other websites.
+        We do not collect financial information, brokerage credentials, trading data, or
+        investment details from users.
       </p>
 
       <h3>Third-Party Data Sources</h3>
       <p>
-        Market data displayed on TickrPulse is sourced from third-party providers including
-        Yahoo Finance and TradingView. When you use TickrPulse, your browser makes requests
-        to our server, which then fetches data from these providers on your behalf. We do
-        not share any of your personal information with these data providers. Please review
-        the privacy policies of these third-party services for information about their
-        data practices.
+        Market data displayed on TickrPulse is sourced from multiple third-party providers.
+        When you use TickrPulse, your browser makes requests to our server, which then
+        fetches data from these providers on your behalf. <strong>We do not share any of
+        your personal information with these data providers.</strong> The third-party services we use include:
+      </p>
+      <ul>
+        <li><strong>Yahoo Finance</strong> — Stock quotes, OHLC chart data, company statistics, options data, earnings data, crypto prices, and news articles.</li>
+        <li><strong>TradingView</strong> — Stock screener filters, economic calendar events, and extended-hours movers scanning.</li>
+        <li><strong>Finnhub</strong> — Insider trading data (SEC Form 4 filings) and earnings calendar information.</li>
+        <li><strong>Quiver Quantitative</strong> — Congressional trading disclosures, government contracts, lobbying data, and dark pool volume.</li>
+        <li><strong>ApeWisdom</strong> — Reddit mention counts and sentiment data from WallStreetBets, r/stocks, and r/investing.</li>
+        <li><strong>Coinbase</strong> — Cryptocurrency OHLC price data for detailed crypto charts.</li>
+        <li><strong>FINRA</strong> — Short interest data and off-exchange (dark pool) trading volume.</li>
+        <li><strong>RSS News Feeds</strong> — Market headlines from CNBC, Bloomberg, MarketWatch, and Google News for the news feed and AI digest.</li>
+      </ul>
+      <p>
+        Please review the privacy policies of these third-party services for information
+        about their own data practices.
+      </p>
+
+      <h3>AI-Generated Content</h3>
+      <p>
+        The Daily Digest feature uses the Anthropic Claude API to generate AI-powered market
+        summaries from publicly available news headlines. Only news article titles and publisher
+        names are sent to the API — no user data, personal information, or browsing history is
+        included in these requests. The AI processes headlines and returns a market summary;
+        no user-identifiable information is transmitted or stored by the AI provider.
+      </p>
+
+      <h3>Authentication & Cloud Storage</h3>
+      <p>
+        User authentication is provided by <strong>Supabase</strong>, a third-party backend
+        service. If you create an account, your email, hashed password, favorites list, price
+        alerts, and stock notes are stored in a Supabase-hosted PostgreSQL database. All data
+        is transmitted over HTTPS/TLS encryption. You can delete your account and all associated
+        data at any time by contacting us. If you choose not to create an account, no personal
+        data is stored on our servers.
       </p>
 
       <h3>Data Security</h3>
       <p>
         We take reasonable measures to protect information transmitted to us. All communication
-        with our servers uses HTTPS/TLS encryption. Since we minimize data collection,
-        the risk of data exposure is inherently limited. However, no method of transmission
-        over the Internet is 100% secure, and we cannot guarantee absolute security.
+        with our servers uses HTTPS/TLS encryption. Authentication tokens are handled securely
+        and never stored in cookies. Since we minimize data collection, the risk of data exposure
+        is inherently limited. However, no method of transmission over the Internet is 100%
+        secure, and we cannot guarantee absolute security.
       </p>
 
       <h3>Data Retention</h3>
       <p>
         Contact form submissions are retained only as long as necessary to respond to your
-        inquiry. Server logs are retained for a maximum of 30 days. localStorage data is
-        stored on your device until you clear it — we have no access to this data.
+        inquiry. Server logs are retained for a maximum of 30 days. Account data (favorites,
+        alerts, notes) is retained as long as your account exists — you may request deletion
+        at any time. localStorage data is stored on your device until you clear it.
       </p>
 
       <h3>Your Rights (GDPR — European Users)</h3>
@@ -96,13 +135,12 @@ function PrivacyModal({ onClose }) {
         <li><strong>Right to Object:</strong> You may object to processing of your personal data.</li>
       </ul>
       <p>
-        Since we collect minimal data (only voluntary contact form submissions), most of
-        these rights are satisfied by default. To exercise any of these rights, please
-        contact us through the Contact form.
+        To exercise any of these rights, please contact us through the Contact form. We will
+        respond within 30 days as required by the GDPR.
       </p>
       <p>
-        <strong>Legal Basis for Processing:</strong> Where applicable, we process data based
-        on your consent (contact form submissions) and our legitimate interest in maintaining
+        <strong>Legal Basis for Processing:</strong> We process data based on your consent
+        (account creation, contact form submissions) and our legitimate interest in maintaining
         site security (server logs).
       </p>
 
@@ -125,10 +163,10 @@ function PrivacyModal({ onClose }) {
 
       <h3>Local Storage & Cookies</h3>
       <p>
-        TickrPulse uses browser localStorage to save your preferences (favorites, settings,
-        recently viewed stocks). This is not a cookie and does not track you across websites.
-        You can clear this data at any time through your browser settings. We do not use
-        any tracking cookies or similar technologies.
+        TickrPulse uses browser localStorage to save your preferences (theme, tab selection,
+        recently viewed stocks, consent acknowledgment). This is not a cookie and does not
+        track you across websites. You can clear this data at any time through your browser
+        settings. We do not use any tracking cookies or similar technologies.
       </p>
 
       <h3>Children's Privacy</h3>
@@ -187,8 +225,19 @@ function TermsModal({ onClose }) {
         displayed on TickrPulse are sourced from third-party providers and may be delayed,
         inaccurate, or incomplete. <strong>We do not guarantee the accuracy, completeness,
         timeliness, or reliability of any data displayed.</strong> Quotes may be delayed
-        by 15 minutes or more. Real-time data should not be relied upon for time-sensitive
-        trading decisions.
+        by 15 minutes or more for NASDAQ, NYSE, and AMEX listed securities. Extended-hours
+        data reflects pre-market and after-hours activity and may have lower liquidity and
+        wider spreads than regular session data. Real-time data should not be relied upon
+        for time-sensitive trading decisions.
+      </p>
+
+      <h3>AI-Generated Content</h3>
+      <p>
+        The Daily Digest feature provides AI-generated market summaries produced by the
+        Anthropic Claude API. These summaries are created from publicly available news
+        headlines and <strong>may contain errors, inaccuracies, or misinterpretations</strong>.
+        AI-generated content is not verified by human editors and should not be treated as
+        authoritative financial reporting. Always verify important information with primary sources.
       </p>
 
       <h3>No Warranty</h3>
@@ -218,11 +267,27 @@ function TermsModal({ onClose }) {
 
       <h3>Third-Party Content & Data</h3>
       <p>
-        TickrPulse aggregates and displays data from third-party sources including Yahoo Finance
-        and TradingView. We are not affiliated with, endorsed by, or sponsored by these
-        providers. All trademarks and brand names belong to their respective owners. News
-        articles and external links are provided for convenience and we are not responsible
-        for their content, accuracy, or availability.
+        TickrPulse aggregates and displays data from multiple third-party sources including
+        Yahoo Finance, TradingView, Finnhub, Quiver Quantitative, ApeWisdom, Coinbase,
+        FINRA, and RSS news feeds from CNBC, Bloomberg, MarketWatch, and Google News.
+        We are not affiliated with, endorsed by, or sponsored by any of these providers.
+        All trademarks and brand names belong to their respective owners.
+      </p>
+      <p>
+        Third-party data is subject to the terms, limitations, and licensing of its respective
+        providers. Data availability, accuracy, and timeliness depend on these external services
+        and may be interrupted without notice. News articles, social sentiment data (Reddit
+        mentions), congressional trading disclosures, insider transactions, and other third-party
+        content are displayed as-is and we are not responsible for their content, accuracy,
+        completeness, or availability.
+      </p>
+
+      <h3>User Accounts</h3>
+      <p>
+        Account creation is optional. If you create an account, you are responsible for
+        maintaining the confidentiality of your credentials. Account data (email, favorites,
+        alerts, notes) is stored using Supabase cloud infrastructure. You may request
+        deletion of your account and all associated data at any time by contacting us.
       </p>
 
       <h3>Intellectual Property</h3>
@@ -238,6 +303,14 @@ function TermsModal({ onClose }) {
         market data; use automated tools for data extraction; attempt to interfere with
         or disrupt the service; use the service for any unlawful purpose; or redistribute
         content without authorization. The service is intended for personal, non-commercial use.
+      </p>
+
+      <h3>Service Availability</h3>
+      <p>
+        TickrPulse relies on third-party APIs and data providers that may impose rate limits,
+        experience downtime, or change their terms of service. We do not guarantee continuous
+        or uninterrupted access to any data or feature. Features may be modified, added, or
+        removed at any time without prior notice.
       </p>
 
       <h3>Governing Law</h3>
@@ -282,25 +355,40 @@ function DoNotSellModal({ onClose }) {
 
       <h3>What We Collect</h3>
       <p>
-        The only personal information we may receive is what you voluntarily submit through
-        our Contact form (name, email, message). This is used solely to respond to your
-        inquiry.
+        Personal information we may hold includes:
+      </p>
+      <ul>
+        <li><strong>Contact form submissions:</strong> Name, email, and message — used solely to respond to your inquiry.</li>
+        <li><strong>Account data (if registered):</strong> Email address, hashed password, favorites list, price alerts, and stock notes — stored securely in our Supabase cloud database to sync across your devices.</li>
+        <li><strong>Server logs:</strong> IP address, browser type, and timestamps — retained for up to 30 days for security purposes only.</li>
+      </ul>
+      <p>
+        Site preferences (theme, tab selection, recently viewed stocks) are stored locally
+        in your browser's localStorage and never reach our servers.
       </p>
 
-      <h3>Your Preferences Are Local</h3>
+      <h3>Third-Party Data Processing</h3>
       <p>
-        All site preferences (favorites, settings, recently viewed stocks) are stored
-        locally in your browser's localStorage. This data never reaches our servers and
-        cannot be sold or shared.
+        Our servers fetch market data from third-party providers (Yahoo Finance, TradingView,
+        Finnhub, Quiver Quantitative, ApeWisdom, Coinbase, FINRA) on your behalf. No personal
+        information is shared with these providers.
+      </p>
+      <p>
+        The Daily Digest feature sends publicly available news headlines (not user data) to
+        the Anthropic Claude API for AI-powered market summaries. No personal or user-identifiable
+        information is included in these API requests.
       </p>
 
       <h3>Exercising Your Rights</h3>
       <p>
-        Under the CCPA, you have the right to request disclosure of what personal information
-        we collect, request deletion of your data, and opt out of any sale of personal
-        information. Since we do not sell data, there is nothing to opt out of — but we
-        respect your right to verify this.
+        Under the CCPA, you have the right to:
       </p>
+      <ul>
+        <li><strong>Right to Know:</strong> Request disclosure of what personal information we collect and how it is used.</li>
+        <li><strong>Right to Delete:</strong> Request deletion of your personal information, including your account and all associated data.</li>
+        <li><strong>Right to Opt-Out:</strong> Opt out of the sale of personal information. Since we do not sell data, there is nothing to opt out of — but we respect your right to verify this.</li>
+        <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising any of these rights.</li>
+      </ul>
       <p>
         To submit a request, please use our Contact form. We will respond within 45 days
         as required by law.
