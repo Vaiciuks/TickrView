@@ -1,26 +1,24 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useEarningsCalendar } from '../hooks/useEarningsCalendar.js';
-import { useScrollLock } from '../hooks/useScrollLock.js';
 import StockLogo from './StockLogo.jsx';
 
-const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function getMonday(weekOffset = 0) {
+function getSunday(weekOffset = 0) {
   const now = new Date();
   const day = now.getDay();
-  const diff = day === 0 ? -6 : 1 - day; // Monday = 1
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diff + weekOffset * 7);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
+  const sunday = new Date(now);
+  sunday.setDate(now.getDate() - day + weekOffset * 7);
+  sunday.setHours(0, 0, 0, 0);
+  return sunday;
 }
 
 function getWeekDays(weekOffset) {
-  const monday = getMonday(weekOffset);
-  return Array.from({ length: 5 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+  const sunday = getSunday(weekOffset);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(sunday);
+    d.setDate(sunday.getDate() + i);
     return d;
   });
 }
@@ -52,236 +50,173 @@ function formatMarketCap(mc) {
   return '';
 }
 
-function SkeletonLoader() {
-  return (
-    <div className="earnings-grid">
-      {DAY_NAMES.map((name, i) => (
-        <div key={i} className="earnings-day">
-          <div className="earnings-day-header">
-            <span className="earnings-day-name">{name}</span>
-          </div>
-          <div className="earnings-day-cards">
-            {[1, 2, 3].map(n => (
-              <div key={n} className="earnings-skeleton-card">
-                <div className="earnings-skeleton-top">
-                  <div className="skeleton-circle" style={{ width: 14, height: 14 }} />
-                  <div className="skeleton-line" style={{ width: 36, height: 11 }} />
-                  <div className="skeleton-line" style={{ width: 44, height: 16, borderRadius: 8, marginLeft: 'auto' }} />
-                </div>
-                <div className="earnings-skeleton-bottom">
-                  <div className="skeleton-line" style={{ width: 56, height: 10 }} />
-                  <div className="skeleton-line" style={{ width: 32, height: 10 }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function formatEps(val) {
   if (val == null) return null;
   return val >= 0 ? `$${val.toFixed(2)}` : `-$${Math.abs(val).toFixed(2)}`;
 }
 
-function EarningCard({ stock, onClick }) {
+function buildHighlight(stock) {
+  const parts = [];
   const epsEst = formatEps(stock.epsEstimate);
   const epsTTM = formatEps(stock.epsTTM);
 
+  if (epsEst) {
+    parts.push(`Expected EPS: ${epsEst}`);
+  }
+  if (epsTTM) {
+    parts.push(`Trailing EPS: ${epsTTM}`);
+  }
+  if (stock.sector && stock.sector !== 'Other') {
+    parts.push(stock.sector);
+  }
+  const mcap = formatMarketCap(stock.marketCap);
+  if (mcap) {
+    parts.push(`${mcap} market cap`);
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+function EarningsCard({ stock, onClick }) {
+  const highlight = buildHighlight(stock);
+
   return (
-    <button className="earnings-card" onClick={() => onClick(stock)}>
-      <div className="earnings-card-top">
-        <StockLogo symbol={stock.symbol} size={14} />
-        <span className="earnings-card-symbol">{stock.symbol}</span>
-        <span className="earnings-card-name">{stock.name}</span>
-        <span className={`earnings-card-change ${stock.changePercent >= 0 ? 'positive' : 'negative'}`}>
+    <button className="ecal-card" onClick={() => onClick(stock)}>
+      <div className="ecal-card-left">
+        <StockLogo symbol={stock.symbol} size={36} />
+        <div className="ecal-card-info">
+          <div className="ecal-card-top-row">
+            <span className="ecal-card-symbol">{stock.symbol}</span>
+            <span className="ecal-card-name">{stock.name}</span>
+          </div>
+          {highlight && (
+            <p className="ecal-card-highlight">{highlight}</p>
+          )}
+        </div>
+      </div>
+      <div className="ecal-card-right">
+        <span className="ecal-card-price">${formatPrice(stock.price)}</span>
+        <span className={`ecal-card-change ${stock.changePercent >= 0 ? 'positive' : 'negative'}`}>
           {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent?.toFixed(2)}%
         </span>
       </div>
-      <div className="earnings-card-bottom">
-        <span className="earnings-card-price">${formatPrice(stock.price)}</span>
-        <span className="earnings-card-mcap">{formatMarketCap(stock.marketCap)}</span>
-      </div>
-      {(epsEst || epsTTM) && (
-        <div className="earnings-card-eps">
-          {epsEst && <span className="earnings-eps-tag">Est: {epsEst}</span>}
-          {epsTTM && <span className="earnings-eps-tag">TTM: {epsTTM}</span>}
-        </div>
-      )}
-      {stock.sector && stock.sector !== 'Other' && (
-        <span className="earnings-card-sector">{stock.sector}</span>
-      )}
     </button>
   );
 }
 
-function DayPanel({ dayName, date, stocks, onClose, onStockClick }) {
-  const dateLabel = `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
-  return (
-    <div className="earnings-panel-overlay" onClick={onClose}>
-      <div className="earnings-panel" onClick={e => e.stopPropagation()}>
-        <div className="earnings-panel-header">
-          <div className="earnings-panel-title">
-            <span>{dayName}, {dateLabel}</span>
-            <span className="earnings-panel-count">{stocks.length} reporting</span>
-          </div>
-          <button className="earnings-panel-close" onClick={onClose}>&times;</button>
-        </div>
-        <div className="earnings-panel-list">
-          {stocks.map(stock => (
-            <button
-              key={stock.symbol}
-              className="earnings-panel-row"
-              onClick={() => onStockClick(stock)}
-            >
-              <StockLogo symbol={stock.symbol} size={20} />
-              <div className="earnings-panel-row-left">
-                <span className="earnings-panel-symbol">{stock.symbol}</span>
-                <span className="earnings-panel-name">{stock.name}</span>
-              </div>
-              <div className="earnings-panel-row-mid">
-                <span className="earnings-panel-price">${formatPrice(stock.price)}</span>
-                <span className="earnings-panel-mcap">
-                  {formatMarketCap(stock.marketCap)}
-                  {formatEps(stock.epsEstimate) && <> · Est: {formatEps(stock.epsEstimate)}</>}
-                </span>
-              </div>
-              <div className="earnings-panel-row-right">
-                <span className={`earnings-panel-change ${stock.changePercent >= 0 ? 'positive' : 'negative'}`}>
-                  {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent?.toFixed(2)}%
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function EarningsCalendar({ active, onSelectStock }) {
-  const { earnings, loading, lastUpdated } = useEarningsCalendar(active);
+  const { earnings, loading } = useEarningsCalendar(active);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [expandedDay, setExpandedDay] = useState(null);
-
-  useScrollLock(!!expandedDay);
+  const [selectedDayIdx, setSelectedDayIdx] = useState(null);
 
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
 
-  const weekLabel = useMemo(() => {
-    const mon = weekDays[0];
-    const fri = weekDays[4];
-    if (mon.getMonth() === fri.getMonth()) {
-      return `${MONTH_NAMES[mon.getMonth()]} ${mon.getDate()} - ${fri.getDate()}`;
+  // Auto-select: prefer today if it has earnings, otherwise first day with earnings, fallback to today
+  const activeIdx = useMemo(() => {
+    if (selectedDayIdx !== null) return selectedDayIdx;
+    const todayIdx = weekDays.findIndex(d => isToday(d));
+    // If today is in this week and has earnings, pick it
+    if (todayIdx >= 0 && (earnings[formatDateKey(weekDays[todayIdx])]?.length || 0) > 0) {
+      return todayIdx;
     }
-    return `${MONTH_NAMES[mon.getMonth()]} ${mon.getDate()} - ${MONTH_NAMES[fri.getMonth()]} ${fri.getDate()}`;
-  }, [weekDays]);
+    // Otherwise pick first day with earnings
+    const firstWithEarnings = weekDays.findIndex(d => (earnings[formatDateKey(d)]?.length || 0) > 0);
+    if (firstWithEarnings >= 0) return firstWithEarnings;
+    // Fallback to today or first day
+    return todayIdx >= 0 ? todayIdx : 0;
+  }, [weekDays, earnings, selectedDayIdx]);
 
-  const totalForWeek = useMemo(() => {
-    return weekDays.reduce((sum, day) => {
-      const key = formatDateKey(day);
-      return sum + (earnings[key]?.length || 0);
-    }, 0);
-  }, [weekDays, earnings]);
+  const selectedDate = weekDays[activeIdx];
+  const selectedKey = formatDateKey(selectedDate);
+  const selectedStocks = earnings[selectedKey] || [];
 
-  const handleCardClick = (stock) => {
+  const handleStockClick = (stock) => {
     if (onSelectStock) {
       onSelectStock({ symbol: stock.symbol, name: stock.name });
     }
   };
 
+  const goToToday = () => {
+    setWeekOffset(0);
+    setSelectedDayIdx(null);
+  };
+
+  const prevWeek = () => {
+    setWeekOffset(o => o - 1);
+    setSelectedDayIdx(null);
+  };
+
+  const nextWeek = () => {
+    setWeekOffset(o => o + 1);
+    setSelectedDayIdx(null);
+  };
+
   return (
-    <div className="earnings-calendar-inner">
-      <div className="earnings-header">
-        <div className="earnings-header-left">
-          {totalForWeek > 0 && (
-            <span className="earnings-total">{totalForWeek} reporting</span>
-          )}
-        </div>
-        <div className="earnings-nav">
-          <button
-            className="earnings-nav-btn"
-            onClick={() => setWeekOffset(o => o - 1)}
-            aria-label="Previous week"
-          >
-            &#8249;
-          </button>
+    <div className="ecal">
+      {/* Header with title and navigation */}
+      <div className="ecal-header">
+        <h3 className="ecal-title">Earnings Calendar</h3>
+        <div className="ecal-nav">
+          <button className="ecal-nav-btn" onClick={prevWeek} aria-label="Previous week">&#8249;</button>
           {weekOffset !== 0 && (
-            <button
-              className="earnings-today-btn"
-              onClick={() => setWeekOffset(0)}
-            >
-              This Week
-            </button>
+            <button className="ecal-today-btn" onClick={goToToday}>Today</button>
           )}
-          <span className="earnings-week-label">{weekLabel}</span>
-          <button
-            className="earnings-nav-btn"
-            onClick={() => setWeekOffset(o => o + 1)}
-            aria-label="Next week"
-          >
-            &#8250;
-          </button>
+          <button className="ecal-nav-btn" onClick={nextWeek} aria-label="Next week">&#8250;</button>
         </div>
       </div>
 
-      {loading ? (
-        <SkeletonLoader />
-      ) : (
-        <div className="earnings-grid">
-          {weekDays.map((day, i) => {
-            const key = formatDateKey(day);
-            const dayStocks = earnings[key] || [];
-            const today = isToday(day);
+      {/* Date strip */}
+      <div className="ecal-strip">
+        {weekDays.map((day, i) => {
+          const key = formatDateKey(day);
+          const count = earnings[key]?.length || 0;
+          const today = isToday(day);
+          const selected = i === activeIdx;
 
-            return (
-              <div key={key} className={`earnings-day${today ? ' earnings-day--today' : ''}`}>
-                <div
-                  className={`earnings-day-header${dayStocks.length > 0 ? ' clickable' : ''}`}
-                  onClick={() => dayStocks.length > 0 && setExpandedDay({ dayName: DAY_NAMES[i], date: day, stocks: dayStocks })}
-                >
-                  <span className="earnings-day-name">{DAY_NAMES[i]}</span>
-                  <span className="earnings-day-date">{day.getDate()}</span>
-                  {dayStocks.length > 0 && (
-                    <span className="earnings-day-count">{dayStocks.length}</span>
-                  )}
-                </div>
-                <div className="earnings-day-cards">
-                  {dayStocks.length > 0 ? (
-                    dayStocks.map(stock => (
-                      <EarningCard
-                        key={stock.symbol}
-                        stock={stock}
-                        onClick={handleCardClick}
-                      />
-                    ))
-                  ) : (
-                    <div className="earnings-day-empty">No earnings</div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          return (
+            <button
+              key={key}
+              className={`ecal-day${selected ? ' ecal-day--selected' : ''}${today ? ' ecal-day--today' : ''}`}
+              onClick={() => setSelectedDayIdx(i)}
+            >
+              <span className="ecal-day-name">{DAY_NAMES[i]}</span>
+              <span className="ecal-day-date">{MONTH_NAMES[day.getMonth()]} {day.getDate()}</span>
+              <span className={`ecal-day-count${count === 0 ? ' ecal-day-count--empty' : ''}`}>
+                {count > 0 ? `${count} Calls` : 'No Calls'}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected day label */}
+      {selectedStocks.length > 0 && (
+        <div className="ecal-day-label">
+          {MONTH_NAMES[selectedDate.getMonth()]} {selectedDate.getDate()} — {selectedStocks.length} Earnings Call{selectedStocks.length !== 1 ? 's' : ''}
         </div>
       )}
 
-      {lastUpdated && (
-        <div className="earnings-footer">
-          Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </div>
-      )}
-
-      {expandedDay && (
-        <DayPanel
-          dayName={expandedDay.dayName}
-          date={expandedDay.date}
-          stocks={expandedDay.stocks}
-          onClose={() => setExpandedDay(null)}
-          onStockClick={(stock) => { setExpandedDay(null); handleCardClick(stock); }}
-        />
-      )}
+      {/* Selected day stocks list */}
+      <div className="ecal-list">
+        {loading ? (
+          <div className="smartmoney-loading">
+            <div className="smartmoney-loading-pulse" />
+            <span>Loading earnings data...</span>
+          </div>
+        ) : selectedStocks.length > 0 ? (
+          selectedStocks.map((stock) => (
+            <EarningsCard
+              key={stock.symbol}
+              stock={stock}
+              onClick={handleStockClick}
+            />
+          ))
+        ) : (
+          <div className="ecal-empty">
+            No earnings scheduled for {MONTH_NAMES[selectedDate.getMonth()]} {selectedDate.getDate()}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

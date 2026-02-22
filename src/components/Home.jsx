@@ -363,6 +363,25 @@ function useSparklineData(active) {
             map[sym] = candles.map(c => c.close).filter(v => v != null);
           }
         }
+        // If most symbols have no data (e.g. weekend), retry with 5d range
+        const filled = Object.keys(map).length;
+        if (filled < SPARKLINE_SYMBOLS.length - 1 && mounted) {
+          const params5d = new URLSearchParams({
+            symbols: SPARKLINE_SYMBOLS.join(','),
+            range: '5d',
+            interval: '15m',
+            prepost: 'true',
+          });
+          const res5d = await fetch(`/api/charts?${params5d}`);
+          if (res5d.ok) {
+            const json5d = await res5d.json();
+            for (const [sym, candles] of Object.entries(json5d.charts || {})) {
+              if (!map[sym] && Array.isArray(candles) && candles.length > 0) {
+                map[sym] = candles.map(c => c.close).filter(v => v != null);
+              }
+            }
+          }
+        }
         if (mounted) setSparklines(map);
       } catch { /* sparklines are decorative */ }
     };
@@ -744,33 +763,31 @@ function FearGreedGauge({ active, futures }) {
   const label = getScoreLabel(score);
   const color = getScoreColor(score);
 
-  // SVG semicircle gauge — 3D glowing arc
+  // SVG semicircle gauge — clean gradient arc
   const cx = 100;
-  const cy = 90;
-  const outerR = 78;
-  const innerR = 58;
-  const midR = (outerR + innerR) / 2;
-  const trackWidth = outerR - innerR;
+  const cy = 88;
+  const r = 68;
+  const strokeW = 12;
   const scoreAngle = Math.PI - (score / 100) * Math.PI;
 
-  // Needle endpoint
-  const needleLen = outerR + 4;
-  const needleInner = innerR - 6;
-  const nx = cx + needleLen * Math.cos(scoreAngle);
-  const ny = cy - needleLen * Math.sin(scoreAngle);
-  const nix = cx + needleInner * Math.cos(scoreAngle);
-  const niy = cy - needleInner * Math.sin(scoreAngle);
+  // Needle
+  const needleTip = r + 6;
+  const needleBase = r - 18;
+  const ntx = cx + needleTip * Math.cos(scoreAngle);
+  const nty = cy - needleTip * Math.sin(scoreAngle);
+  const nbx = cx + needleBase * Math.cos(scoreAngle);
+  const nby = cy - needleBase * Math.sin(scoreAngle);
 
-  // Arc segments (5 color zones)
+  // Zone arc paths (thin arcs with rounded ends)
   const zones = [
-    { start: 0, end: 20, color: '#e01535', id: 'fear-extreme' },
-    { start: 20, end: 40, color: '#f5652a', id: 'fear' },
-    { start: 40, end: 60, color: '#f5a623', id: 'neutral' },
-    { start: 60, end: 80, color: '#8bc34a', id: 'greed' },
-    { start: 80, end: 100, color: '#00d66b', id: 'greed-extreme' },
+    { start: 0, end: 20, color: '#e01535' },
+    { start: 20, end: 40, color: '#f5652a' },
+    { start: 40, end: 60, color: '#f5a623' },
+    { start: 60, end: 80, color: '#8bc34a' },
+    { start: 80, end: 100, color: '#00d66b' },
   ];
 
-  const arcPath = (startPct, endPct, r) => {
+  const arcPath = (startPct, endPct) => {
     const a1 = Math.PI - (startPct / 100) * Math.PI;
     const a2 = Math.PI - (endPct / 100) * Math.PI;
     const x1 = cx + r * Math.cos(a1);
@@ -780,19 +797,11 @@ function FearGreedGauge({ active, futures }) {
     return `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`;
   };
 
-  // Tick marks every 10%
-  const ticks = [];
-  for (let i = 0; i <= 100; i += 10) {
-    const a = Math.PI - (i / 100) * Math.PI;
-    const isMain = i % 20 === 0;
-    const oR = outerR + (isMain ? 6 : 3);
-    const iR = outerR;
-    ticks.push({
-      x1: cx + iR * Math.cos(a), y1: cy - iR * Math.sin(a),
-      x2: cx + oR * Math.cos(a), y2: cy - oR * Math.sin(a),
-      main: isMain, pct: i,
-    });
-  }
+  // Labels at edges
+  const lx0 = cx + (r + 16) * Math.cos(Math.PI);
+  const ly0 = cy - (r + 16) * Math.sin(Math.PI);
+  const lx100 = cx + (r + 16) * Math.cos(0);
+  const ly100 = cy - (r + 16) * Math.sin(0);
 
   return (
     <div className="home-feargreed">
@@ -800,106 +809,80 @@ function FearGreedGauge({ active, futures }) {
         <span className="home-section-title">Fear & Greed</span>
       </div>
       <div className="home-feargreed-gauge">
-        <svg viewBox="0 0 200 120" className="home-feargreed-svg">
+        <svg viewBox="0 0 200 115" className="home-feargreed-svg">
           <defs>
-            {/* Glow filters for each zone */}
-            {zones.map(z => (
-              <filter key={z.id} id={`glow-${z.id}`} x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            ))}
-            {/* Needle glow */}
-            <filter id="glow-needle" x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur stdDeviation="4" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            {/* Score glow */}
-            <filter id="glow-score" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
+            <filter id="fg-needle-shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor={color} floodOpacity="0.6" />
             </filter>
           </defs>
 
-          {/* Background track (dim) */}
+          {/* Dim background track */}
+          <path
+            d={arcPath(0, 100)}
+            fill="none"
+            stroke="rgba(255,255,255,0.06)"
+            strokeWidth={strokeW}
+            strokeLinecap="round"
+          />
+
+          {/* Colored zone arcs */}
           {zones.map((z, i) => (
             <path
-              key={`bg-${i}`}
-              d={arcPath(z.start, z.end, midR)}
+              key={i}
+              d={arcPath(z.start + 0.5, z.end - 0.5)}
               fill="none"
               stroke={z.color}
-              strokeWidth={trackWidth}
-              strokeLinecap="butt"
-              opacity="0.1"
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+              opacity="0.35"
             />
           ))}
 
-          {/* Active arc with glow */}
+          {/* Active filled arc up to score */}
           {zones.filter(z => z.start < score).map((z, i) => (
             <path
-              key={`active-${i}`}
-              d={arcPath(z.start, Math.min(z.end, score), midR)}
+              key={`a-${i}`}
+              d={arcPath(z.start + 0.3, Math.min(z.end, score) - 0.3)}
               fill="none"
               stroke={z.color}
-              strokeWidth={trackWidth}
-              strokeLinecap="butt"
-              filter={`url(#glow-${z.id})`}
+              strokeWidth={strokeW}
+              strokeLinecap="round"
               opacity="0.9"
             />
           ))}
 
-          {/* Tick marks */}
-          {ticks.map((t, i) => (
-            <line
-              key={`tick-${i}`}
-              x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2}
-              stroke="rgba(255,255,255,0.25)"
-              strokeWidth={t.main ? 1.5 : 0.75}
-              strokeLinecap="round"
-            />
-          ))}
+          {/* Edge labels */}
+          <text x={lx0 + 6} y={ly0 + 4} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7" fontWeight="600">0</text>
+          <text x={lx100 - 6} y={ly100 + 4} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7" fontWeight="600">100</text>
 
-          {/* Needle with glow */}
+          {/* Needle */}
           <line
-            x1={nix} y1={niy} x2={nx} y2={ny}
+            x1={nbx} y1={nby} x2={ntx} y2={nty}
             stroke={color}
             strokeWidth="2.5"
             strokeLinecap="round"
-            filter="url(#glow-needle)"
+            filter="url(#fg-needle-shadow)"
           />
-          {/* Needle hub */}
-          <circle cx={cx} cy={cy} r="5" fill={color} opacity="0.3" filter="url(#glow-needle)" />
-          <circle cx={cx} cy={cy} r="3" fill={color} />
+          <circle cx={cx} cy={cy} r="4" fill="#1a1a2e" stroke={color} strokeWidth="1.5" />
 
-          {/* Score text with glow */}
+          {/* Score */}
           <text
-            x={cx} y={cy - 20}
+            x={cx} y={cy - 18}
             textAnchor="middle"
             fill={color}
-            fontSize="26"
+            fontSize="28"
             fontWeight="800"
             fontFamily="var(--font-mono)"
-            filter="url(#glow-score)"
           >{score}</text>
 
-          {/* Label text below center */}
+          {/* Label */}
           <text
-            x={cx} y={cy + 14}
+            x={cx} y={cy + 12}
             textAnchor="middle"
-            fill="rgba(255,255,255,0.5)"
+            fill="rgba(255,255,255,0.45)"
             fontSize="8"
             fontWeight="600"
-            letterSpacing="0.1em"
+            letterSpacing="0.12em"
           >{label.toUpperCase()}</text>
         </svg>
       </div>

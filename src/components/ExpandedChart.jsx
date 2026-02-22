@@ -172,7 +172,7 @@ function makeChartOptions(container, opts = {}) {
       secondsVisible: false,
       visible: opts.timeScaleVisible ?? true,
       barSpacing: 9,
-      minBarSpacing: 5,
+      minBarSpacing: 2,
     },
     rightPriceScale: {
       borderColor: tc.border,
@@ -510,13 +510,6 @@ export default function ExpandedChart({ stock, onClose, isFavorite, onToggleFavo
         autoScale: false,
         scaleMargins: { top: newTop, bottom: newBottom },
       });
-      // Sync compare scale if active
-      try {
-        chart.priceScale('compare').applyOptions({
-          autoScale: false,
-          scaleMargins: { top: newTop, bottom: newBottom },
-        });
-      } catch {}
       e.stopPropagation();
       e.preventDefault();
     };
@@ -1170,7 +1163,9 @@ export default function ExpandedChart({ stock, onClose, isFavorite, onToggleFavo
     return () => { cancelled = true; };
   }, [compareSymbol, activeTf.range, activeTf.interval, prepost]);
 
-  // Render compare overlay line
+  // Render compare overlay on the SAME 'right' price scale so both zoom identically.
+  // Map compare prices so the latest point aligns with the main stock's latest price,
+  // preserving the compare stock's relative movement shape.
   useEffect(() => {
     const chart = mainChartRef.current;
     if (!chart) return;
@@ -1183,24 +1178,22 @@ export default function ExpandedChart({ stock, onClose, isFavorite, onToggleFavo
 
     if (!compareData || compareData.length === 0 || !data || data.length === 0) return;
 
-    const compStart = compareData[0].close;
-    if (!compStart) return;
+    const compLatest = compareData[compareData.length - 1].close;
+    const mainLatest = data[data.length - 1].close;
+    if (!compLatest || !mainLatest) return;
 
     const series = chart.addLineSeries({
       color: '#00bcd4', lineWidth: 2,
-      priceLineVisible: false, lastValueVisible: true,
-      priceScaleId: 'compare',
+      priceLineVisible: false, lastValueVisible: false,
+      priceScaleId: 'right',
       crosshairMarkerVisible: true,
     });
-    chart.priceScale('compare').applyOptions({
-      scaleMargins: { top: 0.1, bottom: 0.3 },
-      borderVisible: false,
-      autoScale: true,
-    });
 
+    // Anchor: compare's latest value → main's latest price
+    // Each point: mainLatest * (compareClose / compLatest)
     series.setData(compareData.map(d => ({
       time: d.time,
-      value: ((d.close - compStart) / compStart) * 100,
+      value: mainLatest * (d.close / compLatest),
     })));
     compareSeriesRef.current = series;
   }, [compareData, data]);
