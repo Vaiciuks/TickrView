@@ -213,7 +213,7 @@ router.get('/', withCache(120), async (req, res, next) => {
     // Batch-fetch quotes for Finnhub stocks that Yahoo didn't cover
     if (unenrichedSymbols.length > 0) {
       try {
-        const unique = [...new Set(unenrichedSymbols)].slice(0, 300);
+        const unique = [...new Set(unenrichedSymbols)];
         const batchQuotes = await fetchBatchQuotes(unique);
         const quoteMap = new Map();
         for (const q of batchQuotes) {
@@ -236,9 +236,12 @@ router.get('/', withCache(120), async (req, res, next) => {
       }
     }
 
-    // Sort each day by market cap (stocks without marketCap go to end)
+    // Remove stocks with no price data (not useful to display) and sort by market cap
     for (const dateKey of Object.keys(earnings)) {
-      earnings[dateKey].sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0));
+      earnings[dateKey] = earnings[dateKey]
+        .filter(s => s.price != null)
+        .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0));
+      if (earnings[dateKey].length === 0) delete earnings[dateKey];
     }
 
     const totalStocks = Object.values(earnings).reduce((s, arr) => s + arr.length, 0);
