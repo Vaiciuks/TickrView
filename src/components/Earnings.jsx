@@ -8,8 +8,8 @@ const SUB_TABS = [
 ];
 
 const SOURCE_NOTES = {
-  calendar: 'Yahoo Finance earnings screener — updated daily',
-  lookup: 'Finnhub API — historical EPS, revenue, and analyst consensus',
+  calendar: 'Nasdaq earnings calendar — updated daily',
+  lookup: 'Nasdaq, Yahoo Finance & Finnhub — EPS, revenue & analyst consensus',
 };
 
 export default function Earnings({ active, onSelectStock }) {
