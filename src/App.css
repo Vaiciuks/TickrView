@@ -1043,7 +1043,7 @@ button, a, input, select, textarea {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
-  padding: 16px 20px;
+  padding: 36px 20px 16px;
   min-width: 240px;
   max-width: 360px;
   width: calc(100vw - 32px);
@@ -1059,14 +1059,15 @@ button, a, input, select, textarea {
 .hotkeys-close {
   position: absolute;
   top: 8px;
-  right: 8px;
+  right: 10px;
   background: none;
   border: none;
   color: var(--text-dim);
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
   line-height: 1;
   padding: 2px 6px;
+  z-index: 2;
 }
 
 .hotkeys-close:hover {

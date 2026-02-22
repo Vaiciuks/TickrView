@@ -100,7 +100,7 @@ function HotkeysButton() {
 
                 <div className="hotkeys-guide-section">
                   <h4>Home Dashboard</h4>
-                  <p>The Home tab gives you a quick overview: <strong>top gainers, losers, trending stocks, futures, and crypto</strong> all in one place. The <strong>Fear & Greed gauge</strong> shows overall market sentiment. Scroll down to explore each category.</p>
+                  <p>The Home tab gives you a quick overview: <strong>top gainers, losers, trending stocks, futures, and crypto</strong> all in one place. The <strong>Fear & Greed gauge</strong> shows overall market sentiment. You can <strong>drag and rearrange any section</strong> on the Home page to customize the layout to your preference — put the sections you care about most at the top.</p>
                 </div>
 
                 <div className="hotkeys-guide-section">
