@@ -100,13 +100,24 @@ export function calcMACD(data, fastPeriod = 12, slowPeriod = 26, signalPeriod = 
 }
 
 // VWAP (Volume Weighted Average Price)
+// Resets at the start of each trading day (detects day boundaries from timestamps)
 export function calcVWAP(data) {
   if (data.length === 0) return [];
   const result = [];
   let cumVol = 0;
   let cumTP = 0;
+  let prevDay = -1;
 
   for (const d of data) {
+    // Detect new trading day — reset accumulators
+    const date = new Date(d.time * 1000);
+    const day = date.getUTCFullYear() * 10000 + (date.getUTCMonth() + 1) * 100 + date.getUTCDate();
+    if (day !== prevDay) {
+      cumVol = 0;
+      cumTP = 0;
+      prevDay = day;
+    }
+
     const tp = (d.high + d.low + d.close) / 3;
     const vol = d.volume || 0;
     cumVol += vol;

@@ -899,6 +899,14 @@ export default function ExpandedChart({ stock, onClose, isFavorite, onToggleFavo
             let p2 = { time: clickTime, price };
             if (p2.time < p1.time) { const tmp = p1; p1 = p2; p2 = tmp; }
 
+            if (p2.time <= p1.time) {
+              // Same-time click — can't draw (LWC requires unique timestamps)
+              trendStartRef.current = null;
+              setDrawClickCount(0);
+              setDrawMode('none');
+              return;
+            }
+
             const color = isRay ? '#42a5f5' : '#ffeb3b';
             const trendSeries = chart.addLineSeries({
               color, lineWidth: isRay ? 2 : 1,
@@ -906,39 +914,42 @@ export default function ExpandedChart({ stock, onClose, isFavorite, onToggleFavo
               priceLineVisible: false, lastValueVisible: false,
               crosshairMarkerVisible: false,
             });
-            trendSeries.setMarkers([
-              { time: p1.time, position: 'inBar', color, shape: 'circle', size: 0.5 },
-              { time: p2.time, position: 'inBar', color, shape: 'circle', size: 0.5 },
-            ]);
 
-            if (isRay && p2.time > p1.time) {
+            if (isRay) {
               const slope = (p2.price - p1.price) / (p2.time - p1.time);
-              const updateRay = () => {
-                const range = chart.timeScale().getVisibleRange();
-                if (!range) return;
-                const rightEdge = range.to + (range.to - range.from) * 0.3;
-                const extTime = Math.max(p2.time, rightEdge);
-                const extValue = p2.price + slope * (extTime - p2.time);
-                trendSeries.setData([
-                  { time: p1.time, value: p1.price },
-                  { time: p2.time, value: p2.price },
-                  ...(extTime > p2.time ? [{ time: extTime, value: extValue }] : []),
-                ]);
-              };
-              chart.timeScale().subscribeVisibleLogicalRangeChange(updateRay);
-              updateRay();
+
+              // Extend ray along ACTUAL chart timestamps to avoid vertical
+              // artifacts in session gaps (overnight, weekends).  Using a
+              // synthetic far-future timestamp caused LWC to draw a vertical
+              // line when the timestamp landed in a gap.
+              const allData = chartDataRef.current;
+              const points = [
+                { time: p1.time, value: p1.price },
+                { time: p2.time, value: p2.price },
+              ];
+              for (const candle of allData) {
+                if (candle.time > p2.time) {
+                  points.push({ time: candle.time, value: p2.price + slope * (candle.time - p2.time) });
+                }
+              }
+
+              trendSeries.setData(points);
               try { trendSeries.applyOptions({ autoscaleInfoProvider: () => null }); } catch {}
-              setDrawings(prev => [...prev, {
-                type: 'ray', series: trendSeries,
-                unsub: () => chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateRay),
-              }]);
+              setDrawings(prev => [...prev, { type: 'ray', series: trendSeries }]);
             } else {
+              // Trendline — just two points
               trendSeries.setData([
                 { time: p1.time, value: p1.price },
                 { time: p2.time, value: p2.price },
               ]);
-              setDrawings(prev => [...prev, { type: isRay ? 'ray' : 'trend', series: trendSeries }]);
+              setDrawings(prev => [...prev, { type: 'trend', series: trendSeries }]);
             }
+
+            // Set markers AFTER setData so they actually render
+            trendSeries.setMarkers([
+              { time: p1.time, position: 'inBar', color, shape: 'circle', size: 0.5 },
+              { time: p2.time, position: 'inBar', color, shape: 'circle', size: 0.5 },
+            ]);
           }
           trendStartRef.current = null;
           setDrawClickCount(0);
