@@ -62,7 +62,7 @@ export default function App() {
 
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("stock-scanner-sidebar");
-    return saved !== null ? saved === "true" : !isMobile;
+    return saved !== null ? saved === "true" : false;
   });
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => {
