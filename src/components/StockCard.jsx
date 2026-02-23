@@ -79,6 +79,8 @@ export default function StockCard({
   useScrollLock(showNote);
 
   const [isFlipped, setIsFlipped] = useState(false);
+  const [stats, setStats] = useState(null);
+  const statsFetched = useRef(false);
 
   const handleFlip = (e) => {
     // Prevent flip when clicking action buttons
@@ -89,6 +91,22 @@ export default function StockCard({
       return;
     }
     setIsFlipped((prev) => !prev);
+    // Lazy-fetch stats on first flip
+    if (!statsFetched.current) {
+      statsFetched.current = true;
+      fetch(`/api/stats/${encodeURIComponent(stock.symbol)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => { if (data) setStats(data); })
+        .catch(() => {});
+    }
+  };
+
+  // Per-card spotlight tracking
+  const handleCardMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    cardRef.current.style.setProperty("--x", `${e.clientX - rect.left}px`);
+    cardRef.current.style.setProperty("--y", `${e.clientY - rect.top}px`);
   };
 
   const handleFullChartClick = (e) => {
@@ -122,6 +140,7 @@ export default function StockCard({
       ref={cardRef}
       className={`stock-card ${isFlipped ? "stock-card-flipped" : ""} ${flash || ""}${isSelected ? " stock-card-selected" : ""}${isFocused ? " stock-card-focused" : ""}`}
       onClick={handleFlip}
+      onMouseMove={handleCardMouseMove}
     >
       <div className="card-inner">
         {/* FRONT OF CARD */}
@@ -268,40 +287,36 @@ export default function StockCard({
             <div className="card-back-stat">
               <span>Market Cap</span>
               <strong>
-                {stock.marketCap ? formatVolume(stock.marketCap) : "--"}
+                {(stats?.marketCap || stock.marketCap) ? formatVolume(stats?.marketCap || stock.marketCap) : "--"}
               </strong>
             </div>
             <div className="card-back-stat">
               <span>P/E Ratio</span>
-              <strong>{stock.peRatio ? stock.peRatio.toFixed(2) : "--"}</strong>
+              <strong>{stats?.peRatio ? stats.peRatio.toFixed(2) : "--"}</strong>
             </div>
             <div className="card-back-stat">
-              <span>Dividend Yield</span>
-              <strong>
-                {stock.dividendYield
-                  ? `${stock.dividendYield.toFixed(2)}%`
-                  : "--"}
-              </strong>
+              <span>EPS</span>
+              <strong>{stats?.eps ? `$${stats.eps.toFixed(2)}` : "--"}</strong>
             </div>
             <div className="card-back-stat">
               <span>52W High</span>
               <strong>
-                {stock.fiftyTwoWeekHigh
-                  ? formatPrice(stock.fiftyTwoWeekHigh)
+                {stats?.fiftyTwoWeekHigh
+                  ? formatPrice(stats.fiftyTwoWeekHigh)
                   : "--"}
               </strong>
             </div>
             <div className="card-back-stat">
               <span>52W Low</span>
               <strong>
-                {stock.fiftyTwoWeekLow
-                  ? formatPrice(stock.fiftyTwoWeekLow)
+                {stats?.fiftyTwoWeekLow
+                  ? formatPrice(stats.fiftyTwoWeekLow)
                   : "--"}
               </strong>
             </div>
             <div className="card-back-stat">
-              <span>Beta</span>
-              <strong>{stock.beta ? stock.beta.toFixed(2) : "--"}</strong>
+              <span>Target</span>
+              <strong>{stats?.priceTarget ? formatPrice(stats.priceTarget) : "--"}</strong>
             </div>
           </div>
           <button className="card-back-btn" onClick={handleFullChartClick}>

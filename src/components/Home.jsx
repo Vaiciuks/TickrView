@@ -395,10 +395,19 @@ function SkeletonGauge() {
 }
 
 function SectionCard({ title, tabKey, onNavigate, children, className = "" }) {
+  const cardRef = useRef(null);
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    cardRef.current.style.setProperty("--x", `${e.clientX - rect.left}px`);
+    cardRef.current.style.setProperty("--y", `${e.clientY - rect.top}px`);
+  };
   return (
     <div
+      ref={cardRef}
       className={`home-card ${className}`}
       onClick={() => onNavigate(tabKey)}
+      onMouseMove={handleMouseMove}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -637,10 +646,20 @@ function MarketPulseCard({ futures, sparklines, onNavigate }) {
     return () => clearInterval(id);
   }, []);
 
+  const heroRef = useRef(null);
+  const handleHeroMouseMove = (e) => {
+    if (!heroRef.current) return;
+    const rect = heroRef.current.getBoundingClientRect();
+    heroRef.current.style.setProperty("--x", `${e.clientX - rect.left}px`);
+    heroRef.current.style.setProperty("--y", `${e.clientY - rect.top}px`);
+  };
+
   return (
     <div
+      ref={heroRef}
       className={`home-card home-card--hero ${isUp ? "home-card--hero-up" : "home-card--hero-down"}`}
       onClick={() => onNavigate("futures")}
+      onMouseMove={handleHeroMouseMove}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {

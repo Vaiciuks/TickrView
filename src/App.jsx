@@ -470,16 +470,8 @@ export default function App() {
     toggleFavorite,
   ]);
 
-  // Spotlight effect tracking
-  const handleMouseMove = useCallback((e) => {
-    const x = e.clientX;
-    const y = e.clientY;
-    document.documentElement.style.setProperty("--x", `${x}px`);
-    document.documentElement.style.setProperty("--y", `${y}px`);
-  }, []);
-
   return (
-    <div className="app" onMouseMove={handleMouseMove}>
+    <div className="app">
       <Header
         lastUpdated={lastUpdated}
         count={stocks.length}
