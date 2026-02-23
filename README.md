@@ -11,10 +11,12 @@ Real-time stock market dashboard with live quotes, interactive charts, heatmaps,
 ### Home Dashboard
 - Drag-and-drop reorderable sections — customize the layout to your preference
 - **Market Pulse** hero card with live S&P 500 data
+- Scrolling news ticker with real-time headlines
 - Top Runners, Top Losers, Trending, Pre/After-Market Movers
 - Fear & Greed gauge (VIX + market breadth weighted score)
 - Futures, Crypto, Earnings, Economic Calendar, Latest News, Favorites
 - Sections can be hidden/shown and reset to default
+- Layout persisted to localStorage
 
 ### Charts & Analysis
 - Full-screen interactive charts powered by TradingView's Lightweight Charts
@@ -34,8 +36,8 @@ Real-time stock market dashboard with live quotes, interactive charts, heatmaps,
 
 ### AI Daily Digest
 - Scrolling headline banner with expandable full digest modal
-- **Premium users:** Claude AI generates structured market summaries from filtered news headlines
-- **Free users:** Top curated financial headlines
+- Claude AI generates structured market summaries from filtered news headlines
+- Falls back to top curated financial headlines when AI is unavailable
 - Two-layer keyword filtering ensures only market-relevant content
 
 ### Smart Money (8 sub-tabs)
@@ -50,6 +52,13 @@ Real-time stock market dashboard with live quotes, interactive charts, heatmaps,
 | **Lobbying** | Corporate lobbying disclosure data | Quiver Quantitative |
 | **Dark Pool** | FINRA off-exchange volume and short volume data | FINRA |
 
+### Portfolio Tracker
+- Add positions with buy price, quantity, and date
+- Real-time P&L with day change tracking
+- Allocation pie chart breakdown
+- Sortable holdings table
+- Data persisted locally
+
 ### Additional Sections
 - **Earnings Calendar** — week-by-week view of upcoming earnings reports
 - **Earnings Lookup** — historical EPS and revenue vs. estimates for any symbol
@@ -59,14 +68,18 @@ Real-time stock market dashboard with live quotes, interactive charts, heatmaps,
 - **Extended Hours Movers** — pre-market and after-hours top gainers/losers
 - **Futures & Indices** — live quotes with mini sparkline charts
 - **Crypto** — cryptocurrency prices via Coinbase
+- **Contact Form** — built-in feedback form with email delivery via Gmail SMTP
 
 ### User Features
-- **Price Alerts** — set target prices with browser notifications (3 alerts free, unlimited premium)
+- **Price Alerts** — set target prices with browser notifications
 - **Favorites** — star any stock, drag to reorder, synced across devices when signed in
+- **Watchlist Sidebar** — collapsible sidebar with recent stocks and quick navigation
 - **Stock Notes** — add personal notes to any stock card
-- **Multi-Chart Grid** — view multiple charts simultaneously
+- **Multi-Chart Grid** — Ctrl+click stocks to view multiple charts simultaneously
 - **Dark/Light Theme** — toggle with preference saved locally
+- **Market Status Detection** — automatically detects pre-market, regular, post-market, and holiday sessions
 - **PWA Support** — installable as a standalone app on mobile and desktop
+- **No account required** — all features work instantly with localStorage; sign in optionally for cloud sync
 
 ---
 
@@ -103,10 +116,10 @@ TickrView/
 ├── src/
 │   ├── App.jsx              # Root component with tab routing
 │   ├── App.css              # All application styles
-│   ├── components/          # 25+ React components
+│   ├── components/          # 35+ React components
 │   ├── contexts/
 │   │   └── AuthContext.jsx  # Supabase auth provider
-│   ├── hooks/               # 24 custom hooks
+│   ├── hooks/               # 28 custom hooks
 │   └── lib/
 │       └── authFetch.js     # Fetch wrapper with auth headers
 ├── index.html
@@ -135,7 +148,7 @@ npm install
 Create a `.env` file in the root directory:
 
 ```env
-# Required for AI Digest (premium feature)
+# Required for AI Digest
 ANTHROPIC_API_KEY=
 
 # Supabase (auth + cloud sync)
@@ -197,7 +210,7 @@ The Express server serves the built frontend from `dist/` and handles all API ro
 
 - **No WebSockets** — all real-time updates use polling (quotes every ~15s, charts every 10–60s depending on timeframe)
 - **All API calls proxy through Express** — keeps API keys server-side and avoids CORS issues
-- **Auth is fully optional** — full read access without an account; signing in enables cloud sync and premium features
+- **Auth is fully optional** — all features work without an account; signing in enables cloud sync across devices
 - **In-memory caching** at the server level reduces upstream API calls (30s–60min TTLs depending on data type)
 - **Yahoo Finance crumb/cookie auth** is managed server-side with auto-refresh on expiry and retry on rate limits
 - **Price animations** use requestAnimationFrame with cubic ease-out for smooth ticker-style transitions
