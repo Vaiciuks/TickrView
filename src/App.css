@@ -2532,6 +2532,7 @@ button, a, input, select, textarea {
     top: 0;
     align-self: flex-start;
     height: 100vh;
+    z-index: 10;
   }
 }
 
@@ -2542,6 +2543,13 @@ button, a, input, select, textarea {
 .ticker-sidebar--closed {
   width: 0;
   border-right: none;
+}
+
+@media (min-width: 1025px) {
+  .ticker-sidebar--closed {
+    width: 32px;
+    background: transparent;
+  }
 }
 
 .ticker-sidebar--closed .ticker-sidebar-content {
@@ -2578,7 +2586,7 @@ button, a, input, select, textarea {
 
 .ticker-sidebar-toggle--collapsed {
   top: 0;
-  right: -32px;
+  right: 0;
   width: 32px;
   height: auto;
   padding: 10px 4px;
@@ -10623,7 +10631,7 @@ button, a, input, select, textarea {
 .portfolio-edge-toggle {
   position: absolute;
   top: 120px;
-  right: -32px;
+  right: 0;
   z-index: 5;
   width: 32px;
   height: auto;
