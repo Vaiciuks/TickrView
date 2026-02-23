@@ -171,7 +171,7 @@ function TickerRow({ stock, onClick, starred, onToggleStar, hasNews, newsArticle
   );
 }
 
-export default function TickerSidebar({ favorites, recentStocks = [], onToggleFavorite, isFavorite, onReorderFavorites, onSelectStock, onSearch, isOpen, onToggle, hasNews, getNews }) {
+export default function TickerSidebar({ favorites, recentStocks = [], onToggleFavorite, isFavorite, onReorderFavorites, onSelectStock, onSearch, isOpen, onToggle, hasNews, getNews, portfolio = [], onOpenPortfolio }) {
   const [search, setSearch] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -407,6 +407,12 @@ export default function TickerSidebar({ favorites, recentStocks = [], onToggleFa
     window.addEventListener('keydown', onKeyDown);
   }, [favorites, onReorderFavorites]);
 
+  // Open portfolio and close sidebar (for mobile)
+  const handleOpenPortfolio = useCallback(() => {
+    if (onOpenPortfolio) onOpenPortfolio();
+    if (isOpen) onToggle();
+  }, [onOpenPortfolio, isOpen, onToggle]);
+
   // Filter out favorites from recent to avoid duplicates
   const favSymbols = new Set(favorites.map(s => s.symbol));
   const filteredRecent = recentStocks.filter(s => !favSymbols.has(s.symbol));
@@ -427,6 +433,18 @@ export default function TickerSidebar({ favorites, recentStocks = [], onToggleFa
             </>
           )}
         </button>
+
+        {/* Desktop portfolio edge toggle — below watchlist toggle */}
+        {!isOpen && onOpenPortfolio && (
+          <button
+            className="portfolio-edge-toggle"
+            onClick={onOpenPortfolio}
+            aria-label="Open portfolio"
+          >
+            <span className="toggle-icon">&#128188;</span>
+            <span className="toggle-label">Portfolio</span>
+          </button>
+        )}
 
         <div className="ticker-sidebar-content">
           <div className="ticker-sidebar-header">
@@ -489,6 +507,12 @@ export default function TickerSidebar({ favorites, recentStocks = [], onToggleFa
             >
               Recent{filteredRecent.length > 0 ? ` (${filteredRecent.length})` : ''}
             </button>
+            <button
+              className={`ticker-sidebar-tab ticker-sidebar-tab--portfolio${activeWatchTab === 'portfolio' ? ' ticker-sidebar-tab--active' : ''}`}
+              onClick={() => setActiveWatchTab('portfolio')}
+            >
+              Portfolio{portfolio.length > 0 ? ` (${portfolio.length})` : ''}
+            </button>
           </div>
 
           <div className="ticker-sidebar-list" ref={listRef}>
@@ -536,6 +560,67 @@ export default function TickerSidebar({ favorites, recentStocks = [], onToggleFa
                 {filteredRecent.length === 0 && (
                   <div className="ticker-sidebar-empty">
                     Stocks you view will appear here
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeWatchTab === 'portfolio' && (
+              <>
+                {portfolio.length > 0 && (
+                  <div className="pf-sidebar-summary">
+                    <span className="pf-sidebar-total">
+                      {portfolio.reduce((sum, h) => sum + (h.marketValue || 0), 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                    </span>
+                    {(() => {
+                      const totalPL = portfolio.reduce((sum, h) => sum + (h.pl || 0), 0);
+                      return (
+                        <span className={`pf-sidebar-pl ${totalPL >= 0 ? 'pf-up' : 'pf-down'}`}>
+                          {totalPL >= 0 ? '+' : ''}{totalPL.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
+                {portfolio.map(h => (
+                  <div
+                    key={h.symbol}
+                    className="ticker-row pf-sidebar-row"
+                    onClick={() => onSelectStock({ symbol: h.symbol, name: h.name, price: h.price, change: h.change, changePercent: h.changePercent })}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <StockLogo symbol={h.symbol} size={28} />
+                    <div className="ticker-row-info">
+                      <div className="ticker-row-info-top">
+                        <span className="ticker-row-symbol">{h.symbol}</span>
+                      </div>
+                      <span className="ticker-row-name">{h.shares} shares @ {formatPrice(h.avgCost)}</span>
+                    </div>
+                    <div className="ticker-row-right">
+                      <span className={`ticker-row-badge ${(h.pl || 0) >= 0 ? 'badge-up' : 'badge-down'}`}>
+                        {h.pl != null ? `${h.pl >= 0 ? '+' : ''}$${Math.abs(h.pl).toFixed(2)}` : '—'}
+                      </span>
+                      {h.price != null && (
+                        <span className={`ticker-row-ext-line ${h.changePercent >= 0 ? 'change-up' : 'change-down'}`}>
+                          {formatPrice(h.price)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {portfolio.length > 0 && onOpenPortfolio && (
+                  <button className="pf-sidebar-open-btn" onClick={handleOpenPortfolio}>
+                    Open Full Portfolio View
+                  </button>
+                )}
+                {portfolio.length === 0 && (
+                  <div className="ticker-sidebar-empty">
+                    {onOpenPortfolio ? (
+                      <button className="pf-sidebar-open-btn" onClick={handleOpenPortfolio}>
+                        Open Portfolio to add holdings
+                      </button>
+                    ) : 'No holdings yet'}
                   </div>
                 )}
               </>

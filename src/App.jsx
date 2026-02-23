@@ -26,7 +26,9 @@ import Screener from './components/Screener.jsx';
 import FuturesIndices from './components/FuturesIndices.jsx';
 import FavoritesGrid from './components/FavoritesGrid.jsx';
 import SmartMoney from './components/SmartMoney.jsx';
+import Portfolio from './components/Portfolio.jsx';
 import Footer from './components/Footer.jsx';
+import { usePortfolio } from './hooks/usePortfolio.js';
 
 const TABS = [
   { key: 'home', label: 'Home' },
@@ -45,7 +47,7 @@ const TABS = [
   { key: 'smartmoney', label: 'Smart Money' },
 ];
 
-const VALID_TABS = new Set(TABS.map(t => t.key));
+const VALID_TABS = new Set([...TABS.map(t => t.key), 'portfolio']);
 
 export default function App() {
   const { session, isPremium } = useAuth();
@@ -111,7 +113,8 @@ export default function App() {
   const isFutures = activeTab === 'futures';
   const isFavorites = activeTab === 'favorites';
   const isSmartMoney = activeTab === 'smartmoney';
-  const isSpecialTab = isHome || isHeatmap || isNews || isEarnings || isEconomy || isMovers || isScreener || isFutures || isFavorites || isSmartMoney;
+  const isPortfolio = activeTab === 'portfolio';
+  const isSpecialTab = isHome || isHeatmap || isNews || isEarnings || isEconomy || isMovers || isScreener || isFutures || isFavorites || isSmartMoney || isPortfolio;
   const { stocks, loading, error, lastUpdated } = isSpecialTab
     ? { stocks: [], loading: false, error: null, lastUpdated: gainersData.lastUpdated }
     : tabData[activeTab];
@@ -125,6 +128,15 @@ export default function App() {
 
   // Stock notes
   const { notes: stockNotes, setNote: setStockNote, getNote: getStockNote, hasNote: hasStockNote } = useStockNotes();
+
+  // Portfolio
+  const {
+    holdings: portfolioHoldings, positions: portfolioPositions,
+    addPosition, removePosition, editPosition,
+    totalValue: pfTotalValue, totalCost: pfTotalCost,
+    totalPL: pfTotalPL, totalPLPercent: pfTotalPLPercent,
+    dayChange: pfDayChange, dayChangePercent: pfDayChangePercent,
+  } = usePortfolio();
 
   // Check alerts across ALL data sources (not just active tab)
   useEffect(() => {
@@ -375,6 +387,8 @@ export default function App() {
           hasNews={hasNews}
           getNews={getNews}
           onSearch={handleSearch}
+          portfolio={portfolioHoldings}
+          onOpenPortfolio={() => changeTab('portfolio')}
         />
         <div className="app-content">
           {isHome ? (
@@ -435,6 +449,20 @@ export default function App() {
               onSelectStock={handleEarningsClick}
               isFavorite={isFavorite}
               onToggleFavorite={toggleFavorite}
+            />
+          ) : isPortfolio ? (
+            <Portfolio
+              holdings={portfolioHoldings}
+              addPosition={addPosition}
+              removePosition={removePosition}
+              editPosition={editPosition}
+              totalValue={pfTotalValue}
+              totalCost={pfTotalCost}
+              totalPL={pfTotalPL}
+              totalPLPercent={pfTotalPLPercent}
+              dayChange={pfDayChange}
+              dayChangePercent={pfDayChangePercent}
+              onSelectStock={handleEarningsClick}
             />
           ) : isSmartMoney ? (
             <SmartMoney

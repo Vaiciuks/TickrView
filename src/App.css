@@ -10189,3 +10189,642 @@ button, a, input, select, textarea {
     max-width: 100%;
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   Portfolio
+   ═══════════════════════════════════════════════════════ */
+
+.portfolio-main {
+  padding: 24px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.pf-header {
+  margin-bottom: 20px;
+}
+
+.pf-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Summary bar — 4 stat cards */
+.pf-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pf-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pf-stat-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.pf-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.pf-stat-pct {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pf-up { color: var(--green-primary); }
+.pf-down { color: var(--red-primary); }
+
+/* Add position form */
+.pf-add-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  align-items: stretch;
+}
+
+.pf-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.pf-input:focus {
+  border-color: var(--accent);
+}
+
+.pf-input::placeholder {
+  color: var(--text-dim);
+}
+
+/* Hide native number spinners */
+.pf-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.pf-input[type="number"]::-webkit-inner-spin-button,
+.pf-input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+/* Custom themed number input wrapper */
+.pf-num-wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.pf-num-wrapper .pf-input {
+  width: 100%;
+  padding-right: 28px;
+  box-sizing: border-box;
+}
+
+.pf-num-arrows {
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  bottom: 1px;
+  width: 24px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-subtle);
+  border-radius: 0 7px 7px 0;
+  overflow: hidden;
+}
+
+.pf-num-arrow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 8px;
+  padding: 0;
+  line-height: 1;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.pf-num-arrow:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.pf-num-arrow:active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.pf-num-arrow + .pf-num-arrow {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.pf-search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 160px;
+}
+
+.pf-search-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pf-num-wrapper.pf-shares-wrapper,
+.pf-num-wrapper.pf-cost-wrapper {
+  width: 110px;
+}
+
+.pf-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0 0 8px 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.pf-suggestion {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.1s ease;
+}
+
+.pf-suggestion:hover {
+  background: var(--bg-card-hover);
+}
+
+.pf-suggestion-sym {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  min-width: 60px;
+}
+
+.pf-suggestion-name {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pf-add-btn {
+  padding: 8px 20px;
+  background: var(--green-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.pf-add-btn:hover {
+  background: var(--green-hover);
+  transform: translateY(-1px);
+}
+
+/* Allocation bar */
+.pf-allocation-section {
+  margin-bottom: 20px;
+}
+
+.pf-allocation-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 8px;
+}
+
+.pf-allocation-seg {
+  min-width: 3px;
+  transition: width 0.3s ease;
+}
+
+.pf-allocation-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.pf-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Holdings table */
+.pf-table-wrapper {
+  overflow-x: auto;
+}
+
+.pf-holdings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.pf-th {
+  padding: 10px 12px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.pf-th:hover {
+  color: var(--text-primary);
+}
+
+.pf-th-symbol {
+  text-align: left;
+}
+
+.pf-row {
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.pf-row:hover {
+  background: var(--bg-card-hover);
+}
+
+.pf-td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.pf-td-symbol {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: inherit;
+}
+
+.pf-symbol-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pf-symbol-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.pf-symbol-full {
+  font-size: 11px;
+  color: var(--text-dim);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pf-td-actions {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pf-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+  color: var(--text-dim);
+}
+
+.pf-action-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.pf-delete-btn:hover {
+  color: var(--red-primary);
+}
+
+.pf-save-btn:hover {
+  color: var(--green-primary);
+}
+
+.pf-edit-input {
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 4px 6px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  width: 80px;
+  outline: none;
+}
+
+/* Empty state */
+.pf-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+
+.pf-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.pf-empty h3 {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.pf-empty p {
+  font-size: 14px;
+  max-width: 340px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Mobile card layout — hidden on desktop, shown on mobile */
+.pf-cards-mobile {
+  display: none;
+}
+
+/* Desktop: portfolio edge toggle */
+.portfolio-edge-toggle {
+  position: absolute;
+  top: 120px;
+  right: -32px;
+  z-index: 5;
+  width: 32px;
+  height: auto;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border-radius: 0 8px 8px 0;
+  background: rgba(30, 30, 50, 0.95);
+  border: 1px solid rgba(100, 100, 180, 0.3);
+  border-left: none;
+  color: rgba(160, 160, 220, 0.9);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.portfolio-edge-toggle:hover {
+  background: rgba(40, 40, 70, 1);
+  border-color: rgba(120, 120, 200, 0.5);
+  color: #fff;
+}
+
+.portfolio-edge-toggle .toggle-icon {
+  font-size: 12px;
+}
+
+.portfolio-edge-toggle .toggle-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  font-family: var(--font-mono);
+}
+
+/* Sidebar portfolio tab styling */
+.ticker-sidebar-tab--portfolio {
+  font-size: 11px;
+}
+
+.pf-sidebar-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+}
+
+.pf-sidebar-total {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pf-sidebar-pl {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pf-sidebar-row {
+  cursor: pointer;
+}
+
+.pf-sidebar-open-btn {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 12px auto;
+  padding: 8px 16px;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pf-sidebar-open-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── Portfolio responsive ── */
+@media (max-width: 768px) {
+  .portfolio-main {
+    padding: 16px 12px;
+  }
+
+  .pf-summary-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .pf-stat-value {
+    font-size: 15px;
+  }
+
+  .pf-add-form {
+    flex-wrap: wrap;
+  }
+
+  .pf-search-wrapper {
+    flex: 1 1 100%;
+  }
+
+  .pf-num-wrapper.pf-shares-wrapper,
+  .pf-num-wrapper.pf-cost-wrapper {
+    flex: 1;
+    width: auto;
+    min-width: 80px;
+  }
+
+  .pf-add-btn {
+    flex: 0 0 auto;
+  }
+
+  /* Hide table on mobile, show cards */
+  .pf-table-wrapper {
+    display: none;
+  }
+
+  .pf-cards-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .pf-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .pf-card:active {
+    background: var(--bg-card-hover);
+  }
+
+  .pf-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .pf-card-symbol-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pf-card-sym {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  .pf-card-name {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .pf-card-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .pf-card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .pf-card-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-primary);
+  }
+
+  .pf-card-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* Hide desktop edge toggle on mobile */
+  .portfolio-edge-toggle {
+    display: none;
+  }
+}
