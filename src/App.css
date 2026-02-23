@@ -4325,12 +4325,13 @@ button, a, input, select, textarea {
 /* ── Earnings Calendar ── */
 
 .earnings-main {
-  height: calc(100vh - 60px);
-  overflow-y: auto;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* ── Earnings Calendar (Perplexity-style) ── */
