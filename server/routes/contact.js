@@ -1,5 +1,9 @@
 import { Router } from 'express';
 import nodemailer from 'nodemailer';
+import dns from 'dns';
+
+// Force IPv4 DNS resolution — Railway can't reach Gmail over IPv6
+dns.setDefaultResultOrder('ipv4first');
 
 const router = Router();
 
@@ -12,7 +16,6 @@ const transporter = process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD
       host: 'smtp.gmail.com',
       port: 465,
       secure: true,
-      family: 4, // Force IPv4 — Railway can't reach Gmail over IPv6
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD,
