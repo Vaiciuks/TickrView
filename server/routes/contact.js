@@ -3,13 +3,16 @@ import nodemailer from 'nodemailer';
 
 const router = Router();
 
-const RECIPIENT = 'karolisvaicius02@gmail.com';
+const RECIPIENT = 'tickrview@gmail.com';
 
 // Configure transporter — uses Gmail SMTP with App Password
 // Set GMAIL_USER and GMAIL_APP_PASSWORD in your .env file
 const transporter = process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD
   ? nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      family: 4, // Force IPv4 — Railway can't reach Gmail over IPv6
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD,
