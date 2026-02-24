@@ -540,27 +540,27 @@ export default function Portfolio({
           </span>
         </div>
         <div className="pf-stat-card">
-          <span className="pf-stat-label">Day Change</span>
-          <span
-            className={`pf-stat-value ${dayChange !== 0 ? (dayChange >= 0 ? "pf-up" : "pf-down") : ""}`}
-          >
-            {fmtDollar(animDayChange)}{" "}
-            {dayChangePercent != null && (
-              <span className="pf-stat-pct">
-                ({fmtPercent(animDayChangePercent)})
-              </span>
-            )}
+          <span className="pf-stat-label">
+            {extInfo
+              ? extInfo.state === "pre" ? "Pre-Market" : "After Hours"
+              : "Day Change"}
           </span>
-          {extInfo && (
-            <span
-              className={`pf-stat-ext ${extInfo.extDollarChange >= 0 ? "pf-up" : "pf-down"}`}
-            >
-              <span className="pf-ext-label">
-                {extInfo.state === "pre" ? "PM" : "AH"}
-              </span>{" "}
-              {fmtDollar(animExtDollar)} ({fmtPercent(animExtPct)})
+          <span
+            className={`pf-stat-value ${
+              extInfo
+                ? (extInfo.extDollarChange >= 0 ? "pf-up" : "pf-down")
+                : dayChange !== 0 ? (dayChange >= 0 ? "pf-up" : "pf-down") : ""
+            }`}
+          >
+            {extInfo
+              ? fmtDollar(animExtDollar)
+              : fmtDollar(animDayChange)}{" "}
+            <span className="pf-stat-pct">
+              ({extInfo
+                ? fmtPercent(animExtPct)
+                : fmtPercent(animDayChangePercent)})
             </span>
-          )}
+          </span>
         </div>
       </div>
 
@@ -575,35 +575,18 @@ export default function Portfolio({
                     { minimumFractionDigits: 2, maximumFractionDigits: 2 },
                   )}`
                 : "—"}
-              {extInfo && (
-                <span
-                  className="pf-chart-market-badge"
-                  style={{ visibility: hoverValue != null ? "hidden" : "visible" }}
-                >
-                  {extInfo.state === "pre" ? "Pre-Market" : "After Hours"}
-                </span>
-              )}
             </div>
-            {totalPL != null && (
+            {extInfo && (
               <div
                 className="pf-chart-changes"
                 style={{ visibility: hoverValue != null ? "hidden" : "visible" }}
               >
                 <span
-                  className={`pf-chart-change ${totalPL >= 0 ? "pf-up" : "pf-down"}`}
+                  className={`pf-chart-ext-change ${extInfo.extDollarChange >= 0 ? "pf-up" : "pf-down"}`}
                 >
-                  {fmtDollar(animTotalPL)} ({fmtPercent(animTotalPLPercent)})
+                  {extInfo.state === "pre" ? "Pre-Market" : "After Hours"}{" "}
+                  {fmtDollar(animExtDollar)} ({fmtPercent(animExtPct)})
                 </span>
-                {extInfo && (
-                  <span
-                    className={`pf-chart-ext-change ${extInfo.extDollarChange >= 0 ? "pf-up" : "pf-down"}`}
-                  >
-                    <span className="pf-chart-ext-label">
-                      {extInfo.state === "pre" ? "PM" : "AH"}
-                    </span>
-                    {fmtDollar(animExtDollar)} ({fmtPercent(animExtPct)})
-                  </span>
-                )}
               </div>
             )}
           </div>
