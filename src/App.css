@@ -7024,6 +7024,44 @@ textarea {
   opacity: 0.4;
 }
 
+.app-footer-stocks {
+  width: 100%;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .app-footer-stocks {
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.app-footer-stocks-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.app-footer-stocks-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.app-footer-stock-link {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  transition: color 0.15s;
+}
+
+.app-footer-stock-link:hover {
+  color: var(--accent);
+}
+
 .app-footer-copy {
   color: var(--text-dim);
 }

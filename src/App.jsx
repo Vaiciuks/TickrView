@@ -346,13 +346,32 @@ export default function App() {
     }
   }, [expandedStock, activeTab]);
 
-  // Set initial history state on mount
+  // Set initial history state on mount + detect /stock/:symbol path
   useEffect(() => {
-    window.history.replaceState(
-      { tab: activeTab, stock: null },
-      "",
-      `#${activeTab}`,
-    );
+    const pathMatch = window.location.pathname.match(/^\/stock\/([A-Za-z0-9.\-^=]+)$/);
+    if (pathMatch) {
+      const symbol = pathMatch[1].toUpperCase();
+      fetch(`/api/quote/${encodeURIComponent(symbol)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((stock) => {
+          if (stock) {
+            setExpandedStock(stock);
+            addRecent(stock);
+            window.history.replaceState(
+              { tab: activeTab, stock: symbol },
+              "",
+              `/stock/${symbol}`,
+            );
+          }
+        })
+        .catch(() => {});
+    } else {
+      window.history.replaceState(
+        { tab: activeTab, stock: null },
+        "",
+        `#${activeTab}`,
+      );
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle browser back/forward
@@ -608,7 +627,12 @@ export default function App() {
       {expandedStock && gridStocks.length === 0 && (
         <ExpandedChart
           stock={expandedStock}
-          onClose={() => setExpandedStock(null)}
+          onClose={() => {
+            setExpandedStock(null);
+            if (window.location.pathname.startsWith('/stock/')) {
+              window.history.pushState({ tab: activeTab, stock: null }, '', `#${activeTab}`);
+            }
+          }}
           isFavorite={isFavorite(expandedStock.symbol)}
           onToggleFavorite={() => toggleFavorite(expandedStock.symbol)}
           newsArticles={getNews(expandedStock.symbol)}

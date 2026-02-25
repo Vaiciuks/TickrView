@@ -688,6 +688,20 @@ export default function Footer() {
               Do Not Sell My Personal Information
             </button>
           </div>
+          <div className="app-footer-stocks">
+            <div className="app-footer-stocks-label">Popular Stocks</div>
+            <div className="app-footer-stocks-grid">
+              {[
+                'AAPL','MSFT','GOOGL','AMZN','NVDA','TSLA','META','JPM','V','JNJ',
+                'WMT','UNH','PG','XOM','HD','MA','BAC','AVGO','COST','NFLX',
+                'AMD','CRM','ABBV','LLY','MRK','PEP','KO','INTC','DIS','BA',
+                'NKE','UBER','PLTR','SBUX','GS','CAT','GE','CVX','MCD','QCOM',
+                'SPY','QQQ','IWM','VOO',
+              ].map(sym => (
+                <a key={sym} href={`/stock/${sym}`} className="app-footer-stock-link">{sym}</a>
+              ))}
+            </div>
+          </div>
           <div className="app-footer-copy">
             Quotes delayed 15 min for NASDAQ, NYSE, and AMEX. Not financial
             advice.

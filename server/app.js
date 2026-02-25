@@ -31,6 +31,7 @@ import govContractsRouter from './routes/govContracts.js';
 import lobbyingRouter from './routes/lobbying.js';
 import darkPoolRouter from './routes/darkPool.js';
 import wsbRouter from './routes/wsb.js';
+import sitemapRouter from './routes/sitemap.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -69,6 +70,7 @@ app.use('/api/gov-contracts', govContractsRouter);
 app.use('/api/lobbying', lobbyingRouter);
 app.use('/api/dark-pool', darkPoolRouter);
 app.use('/api/wsb', wsbRouter);
+app.use('/sitemap.xml', sitemapRouter);
 
 // Diagnostic endpoint — tests Yahoo connectivity from server
 app.get('/api/health', async (req, res) => {
