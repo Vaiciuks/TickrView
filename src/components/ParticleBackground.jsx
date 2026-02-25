@@ -1,16 +1,11 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
-// Stock data that flows diagonally
-const SYMBOLS = [
-  "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL", "AMZN", "META", "AMD",
-  "JPM", "V", "BA", "DIS", "NFLX", "PLTR", "UBER", "CRM", "INTC",
-  "SPY", "QQQ", "AVGO", "LLY", "UNH", "GS", "CAT", "BTC",
-];
-
-const STREAM_COUNT = 55;
-const ANGLE = -Math.PI / 4.5; // ~40 degrees, bottom-left to top-right
-const COS_A = Math.cos(ANGLE);
-const SIN_A = Math.sin(ANGLE);
+const CANDLE_W = 16;
+const CANDLE_GAP = 6;
+const CANDLE_STEP = CANDLE_W + CANDLE_GAP;
+const SCROLL_SPEED = 0.08;
+const FRAMES_PER_CANDLE = Math.round(CANDLE_STEP / SCROLL_SPEED);
 
 function getTheme() {
   return document.documentElement.getAttribute("data-theme") === "light"
@@ -18,210 +13,289 @@ function getTheme() {
     : "dark";
 }
 
-function randomPrice() {
-  return "$" + (5 + Math.random() * 495).toFixed(2);
+function nextPrice(prev, mean, vol) {
+  return prev + (mean - prev) * 0.03 + (Math.random() - 0.5) * vol;
 }
 
-function randomPct() {
-  const val = (Math.random() * 8 - 2.5).toFixed(2);
-  return (val >= 0 ? "+" : "") + val + "%";
+function makeCandle(prev, mean) {
+  const vol = 3.5 + Math.random() * 4.5;
+  const o = prev, c = nextPrice(o, mean, vol);
+  const hi = Math.max(o, c) + Math.random() * vol * 0.5;
+  const lo = Math.min(o, c) - Math.random() * vol * 0.5;
+  // Random phase & speed for individual breathing
+  const phase = Math.random() * Math.PI * 2;
+  const speed = 0.0005 + Math.random() * 0.0008;
+  return { o, c, hi, lo, phase, speed };
 }
 
-function randomVol() {
-  const n = Math.random();
-  if (n < 0.5) return (Math.random() * 90 + 10).toFixed(1) + "M";
-  return (Math.random() * 900 + 100).toFixed(0) + "K";
+function generateCandles(count, mean) {
+  const out = [];
+  let p = mean + (Math.random() - 0.5) * 20;
+  for (let i = 0; i < count; i++) {
+    const candle = makeCandle(p, mean);
+    out.push(candle);
+    p = candle.c;
+  }
+  return out;
 }
 
-function randomLabel() {
-  const r = Math.random();
-  if (r < 0.35) return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-  if (r < 0.6) return randomPrice();
-  if (r < 0.85) return randomPct();
-  return randomVol();
+function generateLine(count, mean) {
+  const pts = [];
+  let p = mean + (Math.random() - 0.5) * 15;
+  for (let i = 0; i < count; i++) {
+    p = nextPrice(p, mean, 2.5);
+    pts.push(p);
+  }
+  return pts;
 }
 
-const COLORS = {
+const THEMES = {
   dark: {
-    cyan: "0,229,255",
-    green: "0,214,107",
-    purple: "179,136,255",
-    red: "255,41,82",
+    bull: [0, 214, 107],
+    bear: [255, 41, 82],
+    glow: [0, 229, 255],
+    line2: [179, 136, 255],
+    line3: [0, 180, 220],
+    grid: "rgba(255,255,255,0.02)",
   },
   light: {
-    cyan: "0,151,167",
-    green: "22,163,74",
-    purple: "147,51,234",
-    red: "220,38,38",
+    bull: [22, 163, 74],
+    bear: [220, 38, 38],
+    glow: [0, 151, 167],
+    line2: [147, 51, 234],
+    line3: [0, 120, 150],
+    grid: "rgba(0,0,0,0.025)",
   },
 };
-
-function pickColor(label, theme) {
-  const c = COLORS[theme];
-  if (label.startsWith("+")) return c.green;
-  if (label.startsWith("-")) return c.red;
-  if (label.startsWith("$")) return c.cyan;
-  if (label.endsWith("M") || label.endsWith("K")) return c.purple;
-  return c.cyan; // symbols
-}
-
-function createStreamItem(w, h, theme, scattered) {
-  const label = randomLabel();
-  const color = pickColor(label, theme);
-  const size = 10 + Math.random() * 6; // 10-16px
-  const speed = 0.3 + Math.random() * 0.5; // 0.3-0.8 px/frame
-  const alpha = 0.06 + Math.random() * 0.14; // 0.06-0.20
-
-  // Diagonal is the full screen diagonal length
-  const diag = Math.sqrt(w * w + h * h);
-  // Band width: items spawn within a wide diagonal corridor
-  const bandWidth = Math.max(w, h) * 0.85;
-
-  // Position along the diagonal (-padding to diag+padding)
-  const along = scattered
-    ? Math.random() * (diag + 400) - 200
-    : -(Math.random() * 200); // new items spawn at the start
-
-  // Position across the band (perpendicular offset)
-  const across = (Math.random() - 0.5) * bandWidth;
-
-  // Convert diagonal coords to screen coords
-  // Origin at bottom-left corner
-  const originX = -w * 0.1;
-  const originY = h * 1.1;
-  const x = originX + along * COS_A + across * -SIN_A;
-  const y = originY + along * SIN_A + across * COS_A;
-
-  return { label, color, size, speed, alpha, x, y, along, diag };
-}
 
 export default function ParticleBackground() {
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
-  const itemsRef = useRef([]);
-  const themeRef = useRef(getTheme());
-  const sizeRef = useRef({ w: 0, h: 0 });
+  const stateRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
+    let w, h;
+    let theme = getTheme();
+
     function resize() {
       const dpr = window.devicePixelRatio || 1;
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const newW = window.innerWidth;
+      const newH = window.innerHeight;
+
+      // Skip minor height-only changes (mobile address bar, sidebar transitions)
+      // This prevents the chart from jumping when scrolling on mobile or toggling sidebar
+      if (w > 0 && newW === w && Math.abs(newH - h) < 100) return;
+
+      w = newW;
+      h = newH;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
-      canvas.style.width = w + "px";
-      canvas.style.height = h + "px";
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      sizeRef.current = { w, h };
     }
 
-    function initItems() {
-      const { w, h } = sizeRef.current;
-      const theme = themeRef.current;
-      itemsRef.current = [];
-      for (let i = 0; i < STREAM_COUNT; i++) {
-        itemsRef.current.push(createStreamItem(w, h, theme, true));
-      }
+    function init() {
+      const diag = Math.sqrt(w * w + h * h);
+      const buffer = CANDLE_STEP * 15;
+      const candleCount = Math.ceil((diag + buffer * 2) / CANDLE_STEP);
+      const mean = 150;
+
+      stateRef.current = {
+        candles: generateCandles(candleCount, mean),
+        line2: generateLine(candleCount, mean + 10),
+        line3: generateLine(candleCount, mean - 10),
+        candleCount, buffer, mean,
+        scrollX: 0, frame: 0,
+      };
     }
 
     function draw() {
-      const { w, h } = sizeRef.current;
-      const items = itemsRef.current;
-      const theme = themeRef.current;
-      const diag = Math.sqrt(w * w + h * h);
+      const s = stateRef.current;
+      if (!s) { rafRef.current = requestAnimationFrame(draw); return; }
+
+      const colors = THEMES[theme];
+      const { candles, line2, line3, buffer, mean } = s;
+      const angle = Math.atan2(-h, w);
+      const chartH = h * 0.9;
+
+      const now = Date.now();
+
+      const halfRange = 32;
+      const minP = mean - halfRange;
+      const range = halfRange * 2;
+      const toY = (p) => {
+        const clamped = Math.max(minP, Math.min(minP + range, p));
+        return -((clamped - minP) / range) * chartH + chartH * 0.5;
+      };
 
       ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      ctx.translate(0, h);
+      ctx.rotate(angle);
+      ctx.translate(-buffer + s.scrollX, 0);
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
+      const totalLen = candles.length * CANDLE_STEP;
 
-        // Move along the diagonal
-        item.x += COS_A * item.speed;
-        item.y += SIN_A * item.speed;
-        item.along += item.speed;
+      // Grid
+      for (let i = 0; i <= 5; i++) {
+        const gy = -chartH * 0.5 + (chartH / 5) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.lineTo(totalLen, gy);
+        ctx.strokeStyle = colors.grid;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
 
-        // Fade based on position along the diagonal (fade in at start, fade out at end)
-        const progress = item.along / (diag + 200);
-        let fade = 1;
-        if (progress < 0.1) fade = progress / 0.1;
-        else if (progress > 0.85) fade = (1 - progress) / 0.15;
-        fade = Math.max(0, Math.min(1, fade));
+      // Secondary line (purple)
+      ctx.beginPath();
+      for (let i = 0; i < line2.length; i++) {
+        const x = i * CANDLE_STEP + CANDLE_W / 2, y = toY(line2[i]);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      const [l2r, l2g, l2b] = colors.line2;
+      ctx.strokeStyle = `rgba(${l2r},${l2g},${l2b},0.14)`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(${l2r},${l2g},${l2b},0.05)`;
+      ctx.lineWidth = 6;
+      ctx.stroke();
 
-        const alpha = item.alpha * fade;
-        if (alpha < 0.005) {
-          // Respawn if off-screen
-          if (item.along > diag + 300) {
-            items[i] = createStreamItem(w, h, theme, false);
-          }
-          continue;
+      // Third line (teal)
+      ctx.beginPath();
+      for (let i = 0; i < line3.length; i++) {
+        const x = i * CANDLE_STEP + CANDLE_W / 2, y = toY(line3[i]);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      const [l3r, l3g, l3b] = colors.line3;
+      ctx.strokeStyle = `rgba(${l3r},${l3g},${l3b},0.10)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Candlesticks — individual breathing fade
+      for (let i = 0; i < candles.length; i++) {
+        const c = candles[i];
+        const x = i * CANDLE_STEP;
+        const bull = c.c >= c.o;
+        const [cr, cg, cb] = bull ? colors.bull : colors.bear;
+        const bodyTop = toY(Math.max(c.o, c.c));
+        const bodyBot = toY(Math.min(c.o, c.c));
+        const bodyH = Math.max(bodyBot - bodyTop, 4);
+        const midX = x + CANDLE_W / 2;
+        const wickTop = toY(c.hi);
+        const wickBot = toY(c.lo);
+
+        // Per-candle breathing
+        const b = 0.58 + 0.42 * Math.sin(now * c.speed + c.phase);
+
+        // Upper wick (above body only)
+        if (wickTop < bodyTop) {
+          ctx.beginPath();
+          ctx.moveTo(midX, wickTop);
+          ctx.lineTo(midX, bodyTop);
+          ctx.strokeStyle = `rgba(${cr},${cg},${cb},${(0.30 * b).toFixed(3)})`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
         }
 
-        ctx.font = `${item.size}px "SF Mono", "Fira Code", "Cascadia Code", monospace`;
-        ctx.fillStyle = `rgba(${item.color},${alpha})`;
-        ctx.fillText(item.label, item.x, item.y);
+        // Lower wick (below body only)
+        if (wickBot > bodyTop + bodyH) {
+          ctx.beginPath();
+          ctx.moveTo(midX, bodyTop + bodyH);
+          ctx.lineTo(midX, wickBot);
+          ctx.strokeStyle = `rgba(${cr},${cg},${cb},${(0.30 * b).toFixed(3)})`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+
+        // Soft glow behind body
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${(0.10 * b).toFixed(3)})`;
+        ctx.fillRect(x - 3, bodyTop - 3, CANDLE_W + 6, bodyH + 6);
+
+        // Body
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${(0.40 * b).toFixed(3)})`;
+        ctx.fillRect(x, bodyTop, CANDLE_W, bodyH);
+
+        // Border
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${(0.50 * b).toFixed(3)})`;
+        ctx.lineWidth = 0.6;
+        ctx.strokeRect(x + 0.5, bodyTop + 0.5, CANDLE_W - 1, Math.max(bodyH - 1, 1));
+      }
+
+      // Main glow line — multi-stroke, no shadowBlur
+      ctx.beginPath();
+      for (let i = 0; i < candles.length; i++) {
+        const x = i * CANDLE_STEP + CANDLE_W / 2, y = toY(candles[i].c);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      const [gr, gg, gb] = colors.glow;
+      ctx.strokeStyle = `rgba(${gr},${gg},${gb},0.04)`;
+      ctx.lineWidth = 16;
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(${gr},${gg},${gb},0.08)`;
+      ctx.lineWidth = 8;
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(${gr},${gg},${gb},0.18)`;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(${gr},${gg},${gb},0.38)`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.restore();
+
+      // Scroll
+      s.scrollX -= SCROLL_SPEED;
+      s.frame++;
+
+      if (s.frame % FRAMES_PER_CANDLE === 0) {
+        const lastC = candles[candles.length - 1];
+        candles.push(makeCandle(lastC.c, mean));
+        line2.push(nextPrice(line2[line2.length - 1], mean + 10, 2.5));
+        line3.push(nextPrice(line3[line3.length - 1], mean - 10, 2.5));
+      }
+
+      const maxLen = s.candleCount + 40;
+      if (candles.length > maxLen) {
+        const trim = candles.length - maxLen;
+        candles.splice(0, trim);
+        line2.splice(0, trim);
+        line3.splice(0, trim);
+        s.scrollX += trim * CANDLE_STEP;
       }
 
       rafRef.current = requestAnimationFrame(draw);
     }
 
-    // Init
     resize();
-    initItems();
+    init();
     rafRef.current = requestAnimationFrame(draw);
 
-    // Resize handler
     let resizeTimer;
-    function onResize() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        resize();
-        initItems();
-      }, 150);
-    }
+    const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 150); };
     window.addEventListener("resize", onResize);
-
-    // Pause when tab hidden
-    function onVisibility() {
-      if (document.hidden) {
-        cancelAnimationFrame(rafRef.current);
-      } else {
-        rafRef.current = requestAnimationFrame(draw);
-      }
-    }
-    document.addEventListener("visibilitychange", onVisibility);
-
-    // Watch theme changes
-    const observer = new MutationObserver(() => {
-      const newTheme = getTheme();
-      if (newTheme !== themeRef.current) {
-        themeRef.current = newTheme;
-        // Update colors on existing items
-        for (const item of itemsRef.current) {
-          item.color = pickColor(item.label, newTheme);
-        }
-      }
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    });
+    const onVis = () => { if (document.hidden) cancelAnimationFrame(rafRef.current); else rafRef.current = requestAnimationFrame(draw); };
+    document.addEventListener("visibilitychange", onVis);
+    const obs = new MutationObserver(() => { const t = getTheme(); if (t !== theme) theme = t; });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
     return () => {
       cancelAnimationFrame(rafRef.current);
       clearTimeout(resizeTimer);
       window.removeEventListener("resize", onResize);
-      document.removeEventListener("visibilitychange", onVisibility);
-      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVis);
+      obs.disconnect();
     };
   }, []);
 
-  return (
+  // Portal to document.body so canvas lives outside .app stacking context
+  return createPortal(
     <canvas
       ref={canvasRef}
+      aria-hidden="true"
       style={{
         position: "fixed",
         top: 0,
@@ -231,6 +305,7 @@ export default function ParticleBackground() {
         zIndex: 0,
         pointerEvents: "none",
       }}
-    />
+    />,
+    document.body,
   );
 }
