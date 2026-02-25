@@ -13,7 +13,7 @@ const THEME_COLORS = {
       { r: 0, g: 229, b: 255 },   // cyan (weighted)
       { r: 179, g: 136, b: 255 }, // purple
     ],
-    lineAlpha: 0.1,
+    lineAlpha: 0.25,
     dotAlpha: 0.4,
   },
   light: {
@@ -23,7 +23,7 @@ const THEME_COLORS = {
       { r: 0, g: 151, b: 167 },   // teal (weighted)
       { r: 147, g: 51, b: 234 },  // purple
     ],
-    lineAlpha: 0.07,
+    lineAlpha: 0.18,
     dotAlpha: 0.3,
   },
 };
@@ -143,7 +143,7 @@ export default function ParticleBackground() {
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.strokeStyle = `rgba(${c.r},${c.g},${c.b},${alpha})`;
-            ctx.lineWidth = 0.5;
+            ctx.lineWidth = 0.8;
             ctx.stroke();
           }
         }
