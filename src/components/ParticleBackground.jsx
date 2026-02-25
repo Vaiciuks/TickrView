@@ -1,32 +1,16 @@
 import { useEffect, useRef } from "react";
 
-const PARTICLE_COUNT_BASE = 50;
-const CONNECTION_DIST = 120;
-const SPEED_MIN = 0.15;
-const SPEED_MAX = 0.45;
+// Stock data that flows diagonally
+const SYMBOLS = [
+  "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL", "AMZN", "META", "AMD",
+  "JPM", "V", "BA", "DIS", "NFLX", "PLTR", "UBER", "CRM", "INTC",
+  "SPY", "QQQ", "AVGO", "LLY", "UNH", "GS", "CAT", "BTC",
+];
 
-const THEME_COLORS = {
-  dark: {
-    particles: [
-      { r: 0, g: 229, b: 255 },   // cyan
-      { r: 0, g: 229, b: 255 },   // cyan (weighted)
-      { r: 0, g: 229, b: 255 },   // cyan (weighted)
-      { r: 179, g: 136, b: 255 }, // purple
-    ],
-    lineAlpha: 0.25,
-    dotAlpha: 0.4,
-  },
-  light: {
-    particles: [
-      { r: 0, g: 151, b: 167 },   // teal
-      { r: 0, g: 151, b: 167 },   // teal (weighted)
-      { r: 0, g: 151, b: 167 },   // teal (weighted)
-      { r: 147, g: 51, b: 234 },  // purple
-    ],
-    lineAlpha: 0.18,
-    dotAlpha: 0.3,
-  },
-};
+const STREAM_COUNT = 55;
+const ANGLE = -Math.PI / 4.5; // ~40 degrees, bottom-left to top-right
+const COS_A = Math.cos(ANGLE);
+const SIN_A = Math.sin(ANGLE);
 
 function getTheme() {
   return document.documentElement.getAttribute("data-theme") === "light"
@@ -34,24 +18,87 @@ function getTheme() {
     : "dark";
 }
 
-function createParticle(w, h, colors) {
-  const color = colors[Math.floor(Math.random() * colors.length)];
-  const angle = Math.random() * Math.PI * 2;
-  const speed = SPEED_MIN + Math.random() * (SPEED_MAX - SPEED_MIN);
-  return {
-    x: Math.random() * w,
-    y: Math.random() * h,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed,
-    r: 1.5 + Math.random() * 1.5,
-    color,
-  };
+function randomPrice() {
+  return "$" + (5 + Math.random() * 495).toFixed(2);
+}
+
+function randomPct() {
+  const val = (Math.random() * 8 - 2.5).toFixed(2);
+  return (val >= 0 ? "+" : "") + val + "%";
+}
+
+function randomVol() {
+  const n = Math.random();
+  if (n < 0.5) return (Math.random() * 90 + 10).toFixed(1) + "M";
+  return (Math.random() * 900 + 100).toFixed(0) + "K";
+}
+
+function randomLabel() {
+  const r = Math.random();
+  if (r < 0.35) return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+  if (r < 0.6) return randomPrice();
+  if (r < 0.85) return randomPct();
+  return randomVol();
+}
+
+const COLORS = {
+  dark: {
+    cyan: "0,229,255",
+    green: "0,214,107",
+    purple: "179,136,255",
+    red: "255,41,82",
+  },
+  light: {
+    cyan: "0,151,167",
+    green: "22,163,74",
+    purple: "147,51,234",
+    red: "220,38,38",
+  },
+};
+
+function pickColor(label, theme) {
+  const c = COLORS[theme];
+  if (label.startsWith("+")) return c.green;
+  if (label.startsWith("-")) return c.red;
+  if (label.startsWith("$")) return c.cyan;
+  if (label.endsWith("M") || label.endsWith("K")) return c.purple;
+  return c.cyan; // symbols
+}
+
+function createStreamItem(w, h, theme, scattered) {
+  const label = randomLabel();
+  const color = pickColor(label, theme);
+  const size = 10 + Math.random() * 6; // 10-16px
+  const speed = 0.3 + Math.random() * 0.5; // 0.3-0.8 px/frame
+  const alpha = 0.06 + Math.random() * 0.14; // 0.06-0.20
+
+  // Diagonal is the full screen diagonal length
+  const diag = Math.sqrt(w * w + h * h);
+  // Band width: items spawn within a wide diagonal corridor
+  const bandWidth = Math.max(w, h) * 0.85;
+
+  // Position along the diagonal (-padding to diag+padding)
+  const along = scattered
+    ? Math.random() * (diag + 400) - 200
+    : -(Math.random() * 200); // new items spawn at the start
+
+  // Position across the band (perpendicular offset)
+  const across = (Math.random() - 0.5) * bandWidth;
+
+  // Convert diagonal coords to screen coords
+  // Origin at bottom-left corner
+  const originX = -w * 0.1;
+  const originY = h * 1.1;
+  const x = originX + along * COS_A + across * -SIN_A;
+  const y = originY + along * SIN_A + across * COS_A;
+
+  return { label, color, size, speed, alpha, x, y, along, diag };
 }
 
 export default function ParticleBackground() {
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
-  const particlesRef = useRef([]);
+  const itemsRef = useRef([]);
   const themeRef = useRef(getTheme());
   const sizeRef = useRef({ w: 0, h: 0 });
 
@@ -70,91 +117,52 @@ export default function ParticleBackground() {
       canvas.style.height = h + "px";
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       sizeRef.current = { w, h };
-
-      // Scale particle count for ultra-wide monitors
-      const count = Math.round(PARTICLE_COUNT_BASE * Math.max(1, w / 1920));
-      const colors = THEME_COLORS[themeRef.current].particles;
-      const existing = particlesRef.current;
-
-      if (existing.length < count) {
-        for (let i = existing.length; i < count; i++) {
-          existing.push(createParticle(w, h, colors));
-        }
-      } else if (existing.length > count) {
-        existing.length = count;
-      }
-
-      // Keep particles in bounds after resize
-      for (const p of existing) {
-        if (p.x > w) p.x = Math.random() * w;
-        if (p.y > h) p.y = Math.random() * h;
-      }
     }
 
-    function initParticles() {
+    function initItems() {
       const { w, h } = sizeRef.current;
-      const count = Math.round(PARTICLE_COUNT_BASE * Math.max(1, w / 1920));
-      const colors = THEME_COLORS[themeRef.current].particles;
-      particlesRef.current = [];
-      for (let i = 0; i < count; i++) {
-        particlesRef.current.push(createParticle(w, h, colors));
-      }
-    }
-
-    function updateThemeColors() {
-      const theme = getTheme();
-      themeRef.current = theme;
-      const colors = THEME_COLORS[theme].particles;
-      for (const p of particlesRef.current) {
-        p.color = colors[Math.floor(Math.random() * colors.length)];
+      const theme = themeRef.current;
+      itemsRef.current = [];
+      for (let i = 0; i < STREAM_COUNT; i++) {
+        itemsRef.current.push(createStreamItem(w, h, theme, true));
       }
     }
 
     function draw() {
       const { w, h } = sizeRef.current;
-      const theme = THEME_COLORS[themeRef.current];
-      const particles = particlesRef.current;
+      const items = itemsRef.current;
+      const theme = themeRef.current;
+      const diag = Math.sqrt(w * w + h * h);
 
       ctx.clearRect(0, 0, w, h);
 
-      // Update positions
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
 
-        // Wrap around edges
-        if (p.x < -10) p.x = w + 10;
-        else if (p.x > w + 10) p.x = -10;
-        if (p.y < -10) p.y = h + 10;
-        else if (p.y > h + 10) p.y = -10;
-      }
+        // Move along the diagonal
+        item.x += COS_A * item.speed;
+        item.y += SIN_A * item.speed;
+        item.along += item.speed;
 
-      // Draw connections
-      const distSq = CONNECTION_DIST * CONNECTION_DIST;
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < distSq) {
-            const alpha = theme.lineAlpha * (1 - d2 / distSq);
-            const c = particles[i].color;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(${c.r},${c.g},${c.b},${alpha})`;
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
+        // Fade based on position along the diagonal (fade in at start, fade out at end)
+        const progress = item.along / (diag + 200);
+        let fade = 1;
+        if (progress < 0.1) fade = progress / 0.1;
+        else if (progress > 0.85) fade = (1 - progress) / 0.15;
+        fade = Math.max(0, Math.min(1, fade));
+
+        const alpha = item.alpha * fade;
+        if (alpha < 0.005) {
+          // Respawn if off-screen
+          if (item.along > diag + 300) {
+            items[i] = createStreamItem(w, h, theme, false);
           }
+          continue;
         }
-      }
 
-      // Draw particles
-      for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${p.color.r},${p.color.g},${p.color.b},${theme.dotAlpha})`;
-        ctx.fill();
+        ctx.font = `${item.size}px "SF Mono", "Fira Code", "Cascadia Code", monospace`;
+        ctx.fillStyle = `rgba(${item.color},${alpha})`;
+        ctx.fillText(item.label, item.x, item.y);
       }
 
       rafRef.current = requestAnimationFrame(draw);
@@ -162,14 +170,17 @@ export default function ParticleBackground() {
 
     // Init
     resize();
-    initParticles();
+    initItems();
     rafRef.current = requestAnimationFrame(draw);
 
-    // Resize handler (debounced)
+    // Resize handler
     let resizeTimer;
     function onResize() {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(resize, 150);
+      resizeTimer = setTimeout(() => {
+        resize();
+        initItems();
+      }, 150);
     }
     window.addEventListener("resize", onResize);
 
@@ -185,8 +196,13 @@ export default function ParticleBackground() {
 
     // Watch theme changes
     const observer = new MutationObserver(() => {
-      if (getTheme() !== themeRef.current) {
-        updateThemeColors();
+      const newTheme = getTheme();
+      if (newTheme !== themeRef.current) {
+        themeRef.current = newTheme;
+        // Update colors on existing items
+        for (const item of itemsRef.current) {
+          item.color = pickColor(item.label, newTheme);
+        }
       }
     });
     observer.observe(document.documentElement, {
