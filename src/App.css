@@ -264,6 +264,8 @@ textarea {
 .app-body {
   display: flex;
   flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .app-content {
