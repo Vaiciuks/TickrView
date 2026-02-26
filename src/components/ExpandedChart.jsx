@@ -1097,6 +1097,39 @@ export default function ExpandedChart({
       } else {
         candleSeriesRef.current.setData(chartData);
       }
+
+      // ── High / Low price markers ──
+      if (chartData.length > 1) {
+        let hiIdx = 0;
+        let loIdx = 0;
+        for (let i = 1; i < chartData.length; i++) {
+          if (chartData[i].high > chartData[hiIdx].high) hiIdx = i;
+          if (chartData[i].low < chartData[loIdx].low) loIdx = i;
+        }
+        const markers = [
+          {
+            time: chartData[hiIdx].time,
+            position: "aboveBar",
+            color: "#00d66b",
+            shape: "circle",
+            size: 0.5,
+            text: formatPrice(chartData[hiIdx].high),
+          },
+          {
+            time: chartData[loIdx].time,
+            position: "belowBar",
+            color: "#ff2952",
+            shape: "circle",
+            size: 0.5,
+            text: formatPrice(chartData[loIdx].low),
+          },
+        ];
+        // lightweight-charts requires markers sorted by time
+        markers.sort((a, b) =>
+          a.time < b.time ? -1 : a.time > b.time ? 1 : 0,
+        );
+        candleSeriesRef.current.setMarkers(markers);
+      }
     }
     if (volumeSeriesRef.current) {
       volumeSeriesRef.current.setData(
