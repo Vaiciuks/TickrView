@@ -630,7 +630,7 @@ export default function App() {
           )}
           </Suspense>
           </TabErrorBoundary>
-          <Footer />
+          <Footer onSelectStock={handleEarningsClick} />
         </div>
       </div>
       {expandedStock && gridStocks.length === 0 && (

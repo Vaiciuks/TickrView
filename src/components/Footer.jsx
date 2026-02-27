@@ -649,7 +649,7 @@ function ConsentBanner({ onOpenPrivacy, onOpenTerms }) {
   );
 }
 
-export default function Footer() {
+export default function Footer({ onSelectStock }) {
   const [activeModal, setActiveModal] = useState(null);
   const year = new Date().getFullYear();
 
@@ -671,7 +671,7 @@ export default function Footer() {
             </div>
             <div className="app-footer-stocks">
               {['AAPL','MSFT','GOOGL','AMZN','NVDA','TSLA','META','AMD','NFLX','PLTR','SPY','QQQ'].map(sym => (
-                <a key={sym} href={`/stock/${sym}`} className="app-footer-stock-link">{sym}</a>
+                <button key={sym} className="app-footer-stock-link" onClick={() => onSelectStock?.({ symbol: sym })}>{sym}</button>
               ))}
             </div>
           </div>

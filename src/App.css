@@ -7111,6 +7111,10 @@ textarea {
   text-decoration: none;
   font-family: var(--font-mono);
   transition: color 0.15s;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .app-footer-stock-link:hover {
