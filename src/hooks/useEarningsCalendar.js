@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { retryFetch } from "../utils/retryFetch.js";
 
 const REFRESH_INTERVAL = 120_000; // 2 minutes
 
@@ -13,7 +14,7 @@ export function useEarningsCalendar(active) {
 
     const fetchEarnings = async () => {
       try {
-        const res = await fetch("/api/earnings");
+        const res = await retryFetch("/api/earnings");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (mounted) {

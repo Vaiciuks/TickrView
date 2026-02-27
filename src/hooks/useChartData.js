@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { retryFetch } from "../utils/retryFetch.js";
 
 export function useChartData(
   symbol,
@@ -9,10 +10,13 @@ export function useChartData(
 ) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const abortRef = useRef(null);
   const intervalRef = useRef(null);
 
   const fetchData = useCallback(
-    async (isInitial) => {
+    async (isInitial, signal) => {
       if (!symbol) return;
       if (isInitial) setLoading(true);
 
@@ -24,33 +28,51 @@ export function useChartData(
         });
         // Bypass server cache on refresh polls to ensure fresh data
         if (!isInitial) params.set("_t", Date.now());
-        const res = await fetch(
+        const res = await retryFetch(
           `/api/chart/${encodeURIComponent(symbol)}?${params}`,
+          { signal },
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
-        setData(json.data);
-      } catch {
+        if (!signal.aborted) {
+          setData(json.data);
+          setError(null);
+          setLastUpdated(new Date());
+        }
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        setError(err.message || "Failed to fetch chart data");
         // keep existing data on refresh failure
       } finally {
-        if (isInitial) setLoading(false);
+        if (isInitial && !signal.aborted) setLoading(false);
       }
     },
     [symbol, range, interval, prepost],
   );
 
   useEffect(() => {
+    // Abort any previous request
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setData(null);
-    fetchData(true);
+    setError(null);
+    setLastUpdated(null);
+    fetchData(true, controller.signal);
 
     if (refreshMs > 0) {
-      intervalRef.current = setInterval(() => fetchData(false), refreshMs);
+      intervalRef.current = setInterval(
+        () => fetchData(false, controller.signal),
+        refreshMs,
+      );
     }
 
     return () => {
+      controller.abort();
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [fetchData, refreshMs]);
 
-  return { data, loading };
+  return { data, loading, error, lastUpdated };
 }

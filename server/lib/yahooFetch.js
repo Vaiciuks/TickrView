@@ -23,6 +23,42 @@ function isRegularHours(unixSeconds) {
 }
 
 // Clip extreme wicks caused by thin pre/post market liquidity
+// Yahoo injects cumulative daily volume snapshots every ~5 minutes on intraday
+// candles. These appear as 30-100x normal volume spikes. Two-pass approach:
+// 1) Flag outliers using the global median (robust — spikes are minority)
+// 2) Replace outlier volumes with the median of their non-outlier neighbors
+function cleanVolumeOutliers(candles) {
+  if (candles.length < 10) return candles;
+  const WINDOW = 5;
+  const THRESHOLD = 8;
+
+  const nonZero = candles.map(c => c.volume).filter(v => v > 0).sort((a, b) => a - b);
+  if (nonZero.length < 5) return candles;
+  const globalMedian = nonZero[Math.floor(nonZero.length / 2)];
+  const outlierFloor = globalMedian * THRESHOLD;
+
+  // Pass 1: flag outliers
+  const isOutlier = candles.map(c => c.volume > outlierFloor);
+
+  // Pass 2: replace outliers with local median of clean neighbors
+  return candles.map((c, i) => {
+    if (!isOutlier[i]) return c;
+
+    const neighbors = [];
+    for (let j = Math.max(0, i - WINDOW); j <= Math.min(candles.length - 1, i + WINDOW); j++) {
+      if (j !== i && !isOutlier[j] && candles[j].volume > 0) {
+        neighbors.push(candles[j].volume);
+      }
+    }
+
+    const replacement = neighbors.length >= 2
+      ? neighbors.sort((a, b) => a - b)[Math.floor(neighbors.length / 2)]
+      : globalMedian;
+
+    return { ...c, volume: replacement };
+  });
+}
+
 function clipExtremeWicks(candles) {
   if (candles.length < 10) return candles;
   const bodies = candles.map(c => Math.abs(c.close - c.open)).filter(b => b > 0).sort((a, b) => a - b);
@@ -104,6 +140,7 @@ export async function fetchChart(symbol, range, interval, includePrePost) {
     // Clip extreme wicks caused by thin pre/post market liquidity (stocks only)
     if (INTRADAY_INTERVALS.has(interval) && !is24h) {
       candles = clipExtremeWicks(candles);
+      candles = cleanVolumeOutliers(candles);
     }
 
     return candles;

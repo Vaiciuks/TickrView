@@ -13,6 +13,7 @@ import {
 } from "../utils/sessionHighlight.js";
 import { RoundedCandleSeries } from "../utils/roundedCandles.js";
 import StockLogo from "./StockLogo.jsx";
+import StaleDataBadge from "./StaleDataBadge.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 
 // Yahoo Finance caps intraday data at ~60 days for 5m/15m/30m and ~730 days for 1h.
@@ -271,7 +272,7 @@ function getChartThemeColors() {
 
 // Stats panel helpers
 function fmtStatPrice(v) {
-  return v != null
+  return v != null && Number.isFinite(v)
     ? v.toLocaleString("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
@@ -279,17 +280,17 @@ function fmtStatPrice(v) {
     : "--";
 }
 function fmtStatNum(v) {
-  return v != null ? v.toFixed(2) : "--";
+  return v != null && Number.isFinite(v) ? v.toFixed(2) : "--";
 }
 function fmtStatVol(v) {
-  if (v == null) return "--";
+  if (v == null || !Number.isFinite(v)) return "--";
   if (v >= 1e9) return (v / 1e9).toFixed(2) + "B";
   if (v >= 1e6) return (v / 1e6).toFixed(2) + "M";
   if (v >= 1e3) return (v / 1e3).toFixed(1) + "K";
   return v.toLocaleString();
 }
 function fmtStatCap(v) {
-  if (v == null) return "--";
+  if (v == null || !Number.isFinite(v)) return "--";
   if (v >= 1e12) return "$" + (v / 1e12).toFixed(2) + "T";
   if (v >= 1e9) return "$" + (v / 1e9).toFixed(2) + "B";
   if (v >= 1e6) return "$" + (v / 1e6).toFixed(0) + "M";
@@ -600,7 +601,7 @@ export default function ExpandedChart({
     minuteIdx !== null ? minuteTfs[minuteIdx] : RANGE_TIMEFRAMES[rangeIdx];
   const refreshMs = activeTf.refreshMs * CHART_REFRESH_FACTOR;
   const prepost = isCrypto ? false : activeTf.prepost !== false;
-  const { data, loading } = useChartData(
+  const { data, loading, error: chartError, lastUpdated: chartLastUpdated } = useChartData(
     stock.symbol,
     activeTf.range,
     activeTf.interval,
@@ -2115,7 +2116,7 @@ export default function ExpandedChart({
                             <div key={a.id} className="alert-list-item">
                               <span>
                                 {a.direction === "above" ? "\u2191" : "\u2193"}{" "}
-                                ${a.targetPrice.toFixed(2)}
+                                ${Number.isFinite(a.targetPrice) ? a.targetPrice.toFixed(2) : "--"}
                               </span>
                               <button
                                 className="alert-remove"
@@ -2235,7 +2236,7 @@ export default function ExpandedChart({
             className={`expanded-header-change ${isPositive ? "change-up" : "change-down"}`}
           >
             {isPositive ? "+" : ""}
-            {animatedPercent.toFixed(2)}%
+            {Number.isFinite(animatedPercent) ? animatedPercent.toFixed(2) : "--"}%
           </span>
           {!compact && liveChange != null && (
             <span
@@ -2258,7 +2259,7 @@ export default function ExpandedChart({
               >
                 {" "}
                 {stock.extChangePercent >= 0 ? "+" : ""}
-                {stock.extChangePercent.toFixed(2)}%
+                {Number.isFinite(stock.extChangePercent) ? stock.extChangePercent.toFixed(2) : "--"}%
               </span>
             </span>
           )}
@@ -2266,6 +2267,9 @@ export default function ExpandedChart({
             <span className="expanded-header-volume">
               Vol {formatVolume(stock.volume)}
             </span>
+          )}
+          {!compact && (
+            <StaleDataBadge lastUpdated={chartLastUpdated} error={chartError} />
           )}
         </div>
         <button className="expanded-close" onClick={onClose} aria-label="Close">
@@ -2697,7 +2701,7 @@ export default function ExpandedChart({
                 <span
                   className={`floating-tooltip-value ${crosshairData.isUp ? "val-up" : "val-down"}`}
                 >
-                  {crosshairData.open.toFixed(2)}
+                  {Number.isFinite(crosshairData.open) ? crosshairData.open.toFixed(2) : "--"}
                 </span>
               </div>
               <div className="floating-tooltip-row">
@@ -2705,7 +2709,7 @@ export default function ExpandedChart({
                 <span
                   className={`floating-tooltip-value ${crosshairData.isUp ? "val-up" : "val-down"}`}
                 >
-                  {crosshairData.high.toFixed(2)}
+                  {Number.isFinite(crosshairData.high) ? crosshairData.high.toFixed(2) : "--"}
                 </span>
               </div>
               <div className="floating-tooltip-row">
@@ -2713,7 +2717,7 @@ export default function ExpandedChart({
                 <span
                   className={`floating-tooltip-value ${crosshairData.isUp ? "val-up" : "val-down"}`}
                 >
-                  {crosshairData.low.toFixed(2)}
+                  {Number.isFinite(crosshairData.low) ? crosshairData.low.toFixed(2) : "--"}
                 </span>
               </div>
               <div className="floating-tooltip-row">
@@ -2721,7 +2725,7 @@ export default function ExpandedChart({
                 <span
                   className={`floating-tooltip-value ${crosshairData.isUp ? "val-up" : "val-down"}`}
                 >
-                  {crosshairData.close.toFixed(2)}
+                  {Number.isFinite(crosshairData.close) ? crosshairData.close.toFixed(2) : "--"}
                 </span>
               </div>
               <div className="floating-tooltip-divider" />
@@ -3181,7 +3185,7 @@ export default function ExpandedChart({
                 <StatsRow
                   label="Dividend"
                   value={
-                    stats.dividendRate != null
+                    stats.dividendRate != null && Number.isFinite(stats.dividendRate)
                       ? `$${stats.dividendRate.toFixed(2)}`
                       : "--"
                   }
@@ -3189,7 +3193,7 @@ export default function ExpandedChart({
                 <StatsRow
                   label="Div Yield"
                   value={
-                    stats.dividendYield != null
+                    stats.dividendYield != null && Number.isFinite(stats.dividendYield)
                       ? `${stats.dividendYield.toFixed(2)}%`
                       : "--"
                   }
@@ -3202,7 +3206,7 @@ export default function ExpandedChart({
                 <StatsRow
                   label="Price Target"
                   value={
-                    stats.priceTarget
+                    stats.priceTarget && Number.isFinite(stats.priceTarget)
                       ? `$${stats.priceTarget.toFixed(2)}`
                       : "--"
                   }

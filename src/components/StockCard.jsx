@@ -234,7 +234,7 @@ export default function StockCard({
               className={`stock-card-change ${isPositive ? "change-up-badge" : "change-down-badge"}`}
             >
               {isPositive ? "+" : ""}
-              {animatedPercent.toFixed(2)}%
+              {Number.isFinite(animatedPercent) ? animatedPercent.toFixed(2) : "--"}%
             </div>
           </div>
           {hasNote && !showNote && (
@@ -258,7 +258,7 @@ export default function StockCard({
                 className={`stock-card-ext-change ${stock.extChangePercent >= 0 ? "change-up" : "change-down"}`}
               >
                 {stock.extChangePercent >= 0 ? "+" : ""}
-                {stock.extChangePercent.toFixed(2)}%
+                {Number.isFinite(stock.extChangePercent) ? stock.extChangePercent.toFixed(2) : "--"}%
               </span>
             </div>
           )}
@@ -292,11 +292,11 @@ export default function StockCard({
             </div>
             <div className="card-back-stat">
               <span>P/E Ratio</span>
-              <strong>{stats?.peRatio ? stats.peRatio.toFixed(2) : "--"}</strong>
+              <strong>{stats?.peRatio && Number.isFinite(stats.peRatio) ? stats.peRatio.toFixed(2) : "--"}</strong>
             </div>
             <div className="card-back-stat">
               <span>EPS</span>
-              <strong>{stats?.eps ? `$${stats.eps.toFixed(2)}` : "--"}</strong>
+              <strong>{stats?.eps && Number.isFinite(stats.eps) ? `$${stats.eps.toFixed(2)}` : "--"}</strong>
             </div>
             <div className="card-back-stat">
               <span>52W High</span>

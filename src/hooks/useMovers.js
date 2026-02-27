@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { QUOTE_POLL_MS } from "../utils/constants.js";
+import { retryFetch } from "../utils/retryFetch.js";
 
 const REFRESH_INTERVAL = 30_000; // list refresh every 30s
 
@@ -67,7 +68,7 @@ export function useMovers(active, session, marketClosed = false) {
 
     const fetchMovers = async () => {
       try {
-        const res = await fetch(`/api/movers?session=${session}`);
+        const res = await retryFetch(`/api/movers?session=${session}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (mounted) {

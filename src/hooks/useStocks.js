@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { REFRESH_INTERVAL, QUOTE_POLL_MS } from "../utils/constants.js";
+import { retryFetch } from "../utils/retryFetch.js";
 
 export function useStocks(endpoint, active = true) {
   const [stocks, setStocks] = useState([]);
@@ -59,7 +60,7 @@ export function useStocks(endpoint, active = true) {
     async (isInitial) => {
       try {
         if (isInitial) setLoading(true);
-        const res = await fetch(endpoint);
+        const res = await retryFetch(endpoint);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const incoming = data.stocks || [];

@@ -1,5 +1,5 @@
 export function formatPrice(price) {
-  if (price == null) return "--";
+  if (price == null || !Number.isFinite(price)) return "--";
   return price.toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
@@ -9,12 +9,12 @@ export function formatPrice(price) {
 }
 
 export function formatPercent(pct) {
-  if (pct == null) return "--";
+  if (pct == null || !Number.isFinite(pct)) return "--";
   return `+${pct.toFixed(2)}%`;
 }
 
 export function formatVolume(vol) {
-  if (vol == null) return "--";
+  if (vol == null || !Number.isFinite(vol)) return "--";
   if (vol >= 1_000_000_000) return `${(vol / 1_000_000_000).toFixed(2)}B`;
   if (vol >= 1_000_000) return `${(vol / 1_000_000).toFixed(1)}M`;
   if (vol >= 1_000) return `${(vol / 1_000).toFixed(1)}K`;

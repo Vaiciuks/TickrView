@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { useStocks } from "./hooks/useStocks.js";
 import { useBatchChartData } from "./hooks/useBatchChartData.js";
 import { useNewsData } from "./hooks/useNewsData.js";
@@ -12,24 +12,27 @@ import { formatRelativeTime } from "./utils/formatters.js";
 import Header from "./components/Header.jsx";
 import GridDropdown from "./components/GridDropdown.jsx";
 import StockCard from "./components/StockCard.jsx";
-import ExpandedChart from "./components/ExpandedChart.jsx";
 import TickerSidebar from "./components/TickerSidebar.jsx";
 import LoadingState from "./components/LoadingState.jsx";
 import EmptyState from "./components/EmptyState.jsx";
-import Heatmap from "./components/Heatmap.jsx";
-import NewsFeed from "./components/NewsFeed.jsx";
-import Earnings from "./components/Earnings.jsx";
-import EconomicCalendar from "./components/EconomicCalendar.jsx";
-import ExtendedHoursMovers from "./components/ExtendedHoursMovers.jsx";
 import Home from "./components/Home.jsx";
-import Screener from "./components/Screener.jsx";
-import FuturesIndices from "./components/FuturesIndices.jsx";
-import FavoritesGrid from "./components/FavoritesGrid.jsx";
-import SmartMoney from "./components/SmartMoney.jsx";
-import Portfolio from "./components/Portfolio.jsx";
 import Footer from "./components/Footer.jsx";
 import ParticleBackground from "./components/ParticleBackground.jsx";
+import TabErrorBoundary from "./components/TabErrorBoundary.jsx";
 import { usePortfolio } from "./hooks/usePortfolio.js";
+
+// Lazy-loaded tab components — each gets its own chunk
+const ExpandedChart = lazy(() => import("./components/ExpandedChart.jsx"));
+const Heatmap = lazy(() => import("./components/Heatmap.jsx"));
+const NewsFeed = lazy(() => import("./components/NewsFeed.jsx"));
+const Earnings = lazy(() => import("./components/Earnings.jsx"));
+const EconomicCalendar = lazy(() => import("./components/EconomicCalendar.jsx"));
+const ExtendedHoursMovers = lazy(() => import("./components/ExtendedHoursMovers.jsx"));
+const Screener = lazy(() => import("./components/Screener.jsx"));
+const FuturesIndices = lazy(() => import("./components/FuturesIndices.jsx"));
+const FavoritesGrid = lazy(() => import("./components/FavoritesGrid.jsx"));
+const SmartMoney = lazy(() => import("./components/SmartMoney.jsx"));
+const Portfolio = lazy(() => import("./components/Portfolio.jsx"));
 
 const TABS = [
   { key: "home", label: "Home" },
@@ -506,6 +509,8 @@ export default function App() {
           onOpenPortfolio={() => changeTab("portfolio")}
         />
         <div className="app-content">
+          <TabErrorBoundary key={activeTab} tabName={TABS.find((t) => t.key === activeTab)?.label || activeTab}>
+          <Suspense fallback={<LoadingState />}>
           {isHome ? (
             <Home
               active={isHome}
@@ -623,45 +628,51 @@ export default function App() {
               ))}
             </main>
           )}
+          </Suspense>
+          </TabErrorBoundary>
           <Footer />
         </div>
       </div>
       {expandedStock && gridStocks.length === 0 && (
-        <ExpandedChart
-          stock={expandedStock}
-          onClose={() => {
-            setExpandedStock(null);
-            if (window.location.pathname.startsWith('/stock/')) {
-              window.history.pushState({ tab: activeTab, stock: null }, '', `#${activeTab}`);
-            }
-          }}
-          isFavorite={isFavorite(expandedStock.symbol)}
-          onToggleFavorite={() => toggleFavorite(expandedStock.symbol)}
-          newsArticles={getNews(expandedStock.symbol)}
-          alerts={getAlerts(expandedStock.symbol)}
-          onAddAlert={addAlert}
-          onRemoveAlert={removeAlert}
-          theme={theme}
-          note={getStockNote(expandedStock.symbol)}
-          onSetNote={(text) => setStockNote(expandedStock.symbol, text)}
-        />
+        <Suspense fallback={<LoadingState />}>
+          <ExpandedChart
+            stock={expandedStock}
+            onClose={() => {
+              setExpandedStock(null);
+              if (window.location.pathname.startsWith('/stock/')) {
+                window.history.pushState({ tab: activeTab, stock: null }, '', `#${activeTab}`);
+              }
+            }}
+            isFavorite={isFavorite(expandedStock.symbol)}
+            onToggleFavorite={() => toggleFavorite(expandedStock.symbol)}
+            newsArticles={getNews(expandedStock.symbol)}
+            alerts={getAlerts(expandedStock.symbol)}
+            onAddAlert={addAlert}
+            onRemoveAlert={removeAlert}
+            theme={theme}
+            note={getStockNote(expandedStock.symbol)}
+            onSetNote={(text) => setStockNote(expandedStock.symbol, text)}
+          />
+        </Suspense>
       )}
       {gridStocks.length >= 2 && !gridMinimized && (
-        <div className="expanded-overlay" onClick={minimizeGrid}>
-          <div className="expanded-grid" onClick={(e) => e.stopPropagation()}>
-            {gridStocks.map((stock) => (
-              <ExpandedChart
-                key={stock.symbol}
-                stock={stock}
-                compact
-                onClose={() => removeFromGrid(stock.symbol)}
-                isFavorite={isFavorite(stock.symbol)}
-                onToggleFavorite={() => toggleFavorite(stock.symbol)}
-                newsArticles={getNews(stock.symbol)}
-              />
-            ))}
+        <Suspense fallback={<LoadingState />}>
+          <div className="expanded-overlay" onClick={minimizeGrid}>
+            <div className="expanded-grid" onClick={(e) => e.stopPropagation()}>
+              {gridStocks.map((stock) => (
+                <ExpandedChart
+                  key={stock.symbol}
+                  stock={stock}
+                  compact
+                  onClose={() => removeFromGrid(stock.symbol)}
+                  isFavorite={isFavorite(stock.symbol)}
+                  onToggleFavorite={() => toggleFavorite(stock.symbol)}
+                  newsArticles={getNews(stock.symbol)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        </Suspense>
       )}
       {gridStocks.length >= 2 && gridMinimized && (
         <button className="grid-badge" onClick={() => setGridMinimized(false)}>
