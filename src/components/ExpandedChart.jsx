@@ -496,6 +496,8 @@ export default function ExpandedChart({
   const rsiSessionRef = useRef(null);
   const macdSessionRef = useRef(null);
   const syncingRef = useRef(false);
+  const desktopAlertBtnRef = useRef(null);
+  const mobileAlertBtnRef = useRef(null);
 
   const [crosshairData, setCrosshairData] = useState(null);
   const [crosshairPoint, setCrosshairPoint] = useState(null);
@@ -2142,6 +2144,7 @@ export default function ExpandedChart({
                 </svg>
               </button>
             )}
+            <div className="expanded-header-actions-secondary">
             {!compact && (
               <button
                 className={`expanded-stats-btn${showStats ? " active" : ""}`}
@@ -2199,6 +2202,7 @@ export default function ExpandedChart({
             {!compact && onAddAlert && (
               <div className="alert-wrapper">
                 <button
+                  ref={desktopAlertBtnRef}
                   className={`expanded-alert-btn${alerts.length > 0 ? " has-alerts" : ""}`}
                   onClick={() => {
                     setShowAlertInput((prev) => !prev);
@@ -2223,77 +2227,6 @@ export default function ExpandedChart({
                     <span className="alert-count">{alerts.length}</span>
                   )}
                 </button>
-                {showAlertInput && (
-                  <>
-                    {createPortal(
-                      <div
-                        className="alert-backdrop"
-                        onClick={() => setShowAlertInput(false)}
-                      />,
-                      document.body,
-                    )}
-                    <div className="alert-popover">
-                      <div className="alert-popover-title">Set Price Alert</div>
-                      <div className="alert-popover-row">
-                        <select
-                          value={alertDirection}
-                          onChange={(e) => setAlertDirection(e.target.value)}
-                          className="alert-direction"
-                        >
-                          <option value="above">Above</option>
-                          <option value="below">Below</option>
-                        </select>
-                        <input
-                          type="number"
-                          step="any"
-                          className="alert-price-input"
-                          value={alertPrice}
-                          onChange={(e) => setAlertPrice(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              const p = parseFloat(alertPrice);
-                              if (p > 0) {
-                                onAddAlert(stock.symbol, p, alertDirection);
-                                setShowAlertInput(false);
-                              }
-                            }
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          className="alert-add-btn"
-                          onClick={() => {
-                            const p = parseFloat(alertPrice);
-                            if (p > 0) {
-                              onAddAlert(stock.symbol, p, alertDirection);
-                              setShowAlertInput(false);
-                            }
-                          }}
-                        >
-                          Add
-                        </button>
-                      </div>
-                      {alerts.length > 0 && (
-                        <div className="alert-list">
-                          {alerts.map((a) => (
-                            <div key={a.id} className="alert-list-item">
-                              <span>
-                                {a.direction === "above" ? "\u2191" : "\u2193"}{" "}
-                                ${Number.isFinite(a.targetPrice) ? a.targetPrice.toFixed(2) : "--"}
-                              </span>
-                              <button
-                                className="alert-remove"
-                                onClick={() => onRemoveAlert(a.id)}
-                              >
-                                &times;
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
               </div>
             )}
             {!compact && onSetNote && (
@@ -2387,6 +2320,7 @@ export default function ExpandedChart({
                   )}
               </div>
             )}
+            </div>
           </div>
         </div>
         <div className="expanded-header-center">
@@ -2450,6 +2384,88 @@ export default function ExpandedChart({
           </svg>
         </button>
       </div>
+
+      {showAlertInput &&
+        createPortal(
+          <>
+            <div
+              className="alert-backdrop"
+              onClick={() => setShowAlertInput(false)}
+            />
+            <div
+              className="alert-popover alert-popover--portal"
+              style={(() => {
+                const btn =
+                  mobileAlertBtnRef.current?.offsetParent
+                    ? mobileAlertBtnRef.current
+                    : desktopAlertBtnRef.current;
+                if (!btn) return {};
+                const r = btn.getBoundingClientRect();
+                return { top: r.bottom + 6, left: Math.max(10, r.left - 140) };
+              })()}
+            >
+              <div className="alert-popover-title">Set Price Alert</div>
+              <div className="alert-popover-row">
+                <select
+                  value={alertDirection}
+                  onChange={(e) => setAlertDirection(e.target.value)}
+                  className="alert-direction"
+                >
+                  <option value="above">Above</option>
+                  <option value="below">Below</option>
+                </select>
+                <input
+                  type="number"
+                  step="any"
+                  className="alert-price-input"
+                  value={alertPrice}
+                  onChange={(e) => setAlertPrice(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const p = parseFloat(alertPrice);
+                      if (p > 0) {
+                        onAddAlert(stock.symbol, p, alertDirection);
+                        setShowAlertInput(false);
+                      }
+                    }
+                  }}
+                  autoFocus
+                />
+                <button
+                  className="alert-add-btn"
+                  onClick={() => {
+                    const p = parseFloat(alertPrice);
+                    if (p > 0) {
+                      onAddAlert(stock.symbol, p, alertDirection);
+                      setShowAlertInput(false);
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              {alerts.length > 0 && (
+                <div className="alert-list">
+                  {alerts.map((a) => (
+                    <div key={a.id} className="alert-list-item">
+                      <span>
+                        {a.direction === "above" ? "\u2191" : "\u2193"}{" "}
+                        ${Number.isFinite(a.targetPrice) ? a.targetPrice.toFixed(2) : "--"}
+                      </span>
+                      <button
+                        className="alert-remove"
+                        onClick={() => onRemoveAlert(a.id)}
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>,
+          document.body,
+        )}
 
       <div className="expanded-chart-area">
         <div className="chart-toolbar">
@@ -2832,6 +2848,71 @@ export default function ExpandedChart({
                     ? "Copied to clipboard!"
                     : "Downloaded!"}
                 </span>
+              )}
+            </div>
+
+            {/* Mobile-only: action buttons relocated from header */}
+            <div className="chart-tools-extra">
+              <span className="chart-tools-divider" />
+              <button
+                className={`chart-tool-btn${showStats ? " chart-tool-btn--active" : ""}`}
+                onClick={() => {
+                  setShowStats((prev) => !prev);
+                  setShowNews(false);
+                  setShowSmartMoney(false);
+                }}
+                title="Key Statistics"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+                </svg>
+              </button>
+              <button
+                className={`chart-tool-btn${showSmartMoney ? " chart-tool-btn--active" : ""}`}
+                onClick={() => {
+                  setShowSmartMoney((prev) => !prev);
+                  setShowStats(false);
+                  setShowNews(false);
+                }}
+                title="Smart Money"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                </svg>
+              </button>
+              {onAddAlert && (
+                <button
+                  ref={mobileAlertBtnRef}
+                  className={`chart-tool-btn${alerts.length > 0 ? " chart-tool-btn--active" : ""}`}
+                  onClick={() => {
+                    setShowAlertInput((prev) => !prev);
+                    setAlertPrice(livePrice.toFixed(2));
+                  }}
+                  title="Price alerts"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" />
+                  </svg>
+                  {alerts.length > 0 && (
+                    <span className="alert-count">{alerts.length}</span>
+                  )}
+                </button>
+              )}
+              {onSetNote && (
+                <button
+                  className={`chart-tool-btn${note ? " chart-tool-btn--active" : ""}`}
+                  onClick={() => {
+                    setShowNoteInput((prev) => {
+                      if (!prev) setNoteText(note?.text || "");
+                      return !prev;
+                    });
+                  }}
+                  title={note ? "Edit note" : "Add note"}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill={note ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                </button>
               )}
             </div>
           </div>
