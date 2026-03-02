@@ -8,6 +8,7 @@ import { useHomeLayout } from "../hooks/useHomeLayout.js";
 import { lockScroll, unlockScroll } from "../hooks/useScrollLock.js";
 import { formatPrice, formatRelativeTime } from "../utils/formatters.js";
 import StockLogo from "./StockLogo.jsx";
+import DigestBanner from "./DigestBanner.jsx";
 
 const SECTIONS = [
   { key: "pulse", label: "Market Overview", span: 2 },
@@ -2041,6 +2042,9 @@ export default function Home({
 
   return (
     <main className="home-main">
+      <div className="digest-banner-desktop">
+        <DigestBanner />
+      </div>
       {/* Brand hero — always first, not reorderable */}
       <div className="home-brand">
         <div className="home-brand-top">

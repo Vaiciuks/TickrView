@@ -6106,14 +6106,14 @@ textarea {
   display: none;
 }
 
-/* Full-width desktop digest strip below header */
+/* Desktop digest strip aligned with home content */
 .digest-banner-desktop {
-  padding: 0 24px;
+  margin: -12px 0 -8px;
 }
 
 .digest-banner-desktop .digest-banner {
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: none;
+  width: 100%;
   border: none;
   border-radius: 0;
   background: none;

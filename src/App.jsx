@@ -19,7 +19,6 @@ import Home from "./components/Home.jsx";
 import Footer from "./components/Footer.jsx";
 import ParticleBackground from "./components/ParticleBackground.jsx";
 import TabErrorBoundary from "./components/TabErrorBoundary.jsx";
-import DigestBanner from "./components/DigestBanner.jsx";
 import { usePortfolio } from "./hooks/usePortfolio.js";
 
 // Lazy-loaded tab components — each gets its own chunk
@@ -493,9 +492,6 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
       />
-      <div className="digest-banner-desktop">
-        <DigestBanner />
-      </div>
       <div className={`app-body${isHome ? "" : " app-body--opaque"}`}>
         <TickerSidebar
           favorites={favorites}
