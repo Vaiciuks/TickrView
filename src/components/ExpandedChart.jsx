@@ -2145,8 +2145,7 @@ export default function ExpandedChart({
               </button>
             )}
             <div className="expanded-header-actions-secondary">
-            {!compact && (
-              <button
+            <button
                 className={`expanded-stats-btn${showStats ? " active" : ""}`}
                 onClick={() => {
                   setShowStats((prev) => !prev);
@@ -2172,9 +2171,7 @@ export default function ExpandedChart({
                   <rect x="14" y="14" width="7" height="7" />
                 </svg>
               </button>
-            )}
-            {!compact && (
-              <button
+            <button
                 className={`expanded-smartmoney-btn${showSmartMoney ? " active" : ""}`}
                 onClick={() => {
                   setShowSmartMoney((prev) => !prev);
@@ -2198,8 +2195,7 @@ export default function ExpandedChart({
                   <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
                 </svg>
               </button>
-            )}
-            {!compact && onAddAlert && (
+            {onAddAlert && (
               <div className="alert-wrapper">
                 <button
                   ref={desktopAlertBtnRef}
@@ -2229,7 +2225,7 @@ export default function ExpandedChart({
                 </button>
               </div>
             )}
-            {!compact && onSetNote && (
+            {onSetNote && (
               <div className="note-wrapper">
                 <button
                   className={`expanded-note-btn${note ? " has-note" : ""}`}

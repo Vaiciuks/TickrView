@@ -666,6 +666,12 @@ export default function App() {
                   isFavorite={isFavorite(stock.symbol)}
                   onToggleFavorite={() => toggleFavorite(stock.symbol)}
                   newsArticles={getNews(stock.symbol)}
+                  alerts={getAlerts(stock.symbol)}
+                  onAddAlert={addAlert}
+                  onRemoveAlert={removeAlert}
+                  theme={theme}
+                  note={getStockNote(stock.symbol)}
+                  onSetNote={(text) => setStockNote(stock.symbol, text)}
                 />
               ))}
             </div>
