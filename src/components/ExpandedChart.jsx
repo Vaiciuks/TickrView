@@ -2497,7 +2497,6 @@ export default function ExpandedChart({
           </div>
         </div>
 
-        {!compact && (
           <div className="chart-tools" ref={panelRef}>
             {/* Chart Type */}
             <div className="chart-tool-wrapper">
@@ -2912,7 +2911,6 @@ export default function ExpandedChart({
               )}
             </div>
           </div>
-        )}
 
         <div
           className={`expanded-chart-container${drawMode !== "none" ? " drawing-active" : ""}${snipMode ? " snip-active" : ""}`}
