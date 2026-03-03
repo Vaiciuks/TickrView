@@ -2331,7 +2331,7 @@ export default function ExpandedChart({
             {isPositive ? "+" : ""}
             {Number.isFinite(animatedPercent) ? animatedPercent.toFixed(2) : "--"}%
           </span>
-          {!compact && liveChange != null && (
+          {liveChange != null && (
             <span
               className={`expanded-header-abs ${isPositive ? "change-up" : "change-down"}`}
             >
@@ -2356,14 +2356,12 @@ export default function ExpandedChart({
               </span>
             </span>
           )}
-          {!compact && stock.volume != null && (
+          {stock.volume != null && (
             <span className="expanded-header-volume">
               Vol {formatVolume(stock.volume)}
             </span>
           )}
-          {!compact && (
-            <StaleDataBadge lastUpdated={chartLastUpdated} error={chartError} />
-          )}
+          <StaleDataBadge lastUpdated={chartLastUpdated} error={chartError} />
         </div>
         <button className="expanded-close" onClick={onClose} aria-label="Close">
           <svg
