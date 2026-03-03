@@ -82,14 +82,25 @@ export default function StockCard({
   const [stats, setStats] = useState(null);
   const statsFetched = useRef(false);
 
-  const handleFlip = (e) => {
-    // Prevent flip when clicking action buttons
+  const handleCardClick = (e) => {
+    // Ignore clicks on buttons or note preview
     if (
       e.target.closest("button") ||
       e.target.closest(".stock-card-note-preview")
     ) {
       return;
     }
+    // If card is flipped, flip back to front
+    if (isFlipped) {
+      setIsFlipped(false);
+      return;
+    }
+    // Otherwise open the chart (supports ctrl+click for multi-chart)
+    onClick(e);
+  };
+
+  const handleFlip = (e) => {
+    e.stopPropagation();
     setIsFlipped((prev) => !prev);
     // Lazy-fetch stats on first flip
     if (!statsFetched.current) {
@@ -139,7 +150,7 @@ export default function StockCard({
     <article
       ref={cardRef}
       className={`stock-card ${isFlipped ? "stock-card-flipped" : ""} ${flash || ""}${isSelected ? " stock-card-selected" : ""}${isFocused ? " stock-card-focused" : ""}`}
-      onClick={handleFlip}
+      onClick={handleCardClick}
       onMouseMove={handleCardMouseMove}
     >
       <div className="card-inner">
@@ -229,6 +240,18 @@ export default function StockCard({
                   {isFavorite ? "\u2605" : "\u2606"}
                 </button>
               )}
+              <button
+                className="stock-card-flip-btn"
+                onClick={handleFlip}
+                aria-label="View stock details"
+                title="Quick overview"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+              </button>
             </div>
             <div
               className={`stock-card-change ${isPositive ? "change-up-badge" : "change-down-badge"}`}

@@ -3554,6 +3554,33 @@ textarea {
   }
 }
 
+.stock-card-flip-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px;
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s, transform 0.15s;
+}
+
+.stock-card:hover .stock-card-flip-btn {
+  opacity: 1;
+}
+
+.stock-card-flip-btn:hover {
+  color: var(--accent);
+  transform: scale(1.2);
+}
+
+@media (max-width: 1024px) {
+  .stock-card-flip-btn {
+    opacity: 1;
+  }
+}
+
 /* ── Stock Notes (on StockCard) ── */
 
 .stock-card-note-btn {
