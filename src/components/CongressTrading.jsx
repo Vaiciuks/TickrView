@@ -25,40 +25,40 @@ export default function CongressTrading({ active, onSelectStock }) {
       let aVal, bVal;
       switch (sortCol) {
         case "transactionDate":
-          aVal = a.transactionDate;
-          bVal = b.transactionDate;
+          aVal = new Date(a.transactionDate || 0).getTime();
+          bVal = new Date(b.transactionDate || 0).getTime();
           break;
         case "politician":
-          aVal = a.politician;
-          bVal = b.politician;
+          aVal = a.politician || "";
+          bVal = b.politician || "";
           break;
         case "chamber":
-          aVal = a.chamber;
-          bVal = b.chamber;
+          aVal = a.chamber || "";
+          bVal = b.chamber || "";
           break;
         case "ticker":
-          aVal = a.ticker;
-          bVal = b.ticker;
+          aVal = a.ticker || "";
+          bVal = b.ticker || "";
           break;
         case "type":
-          aVal = a.type;
-          bVal = b.type;
+          aVal = a.type || "";
+          bVal = b.type || "";
           break;
         case "amount":
-          aVal = a.amount;
-          bVal = b.amount;
+          aVal = a.amount || "";
+          bVal = b.amount || "";
           break;
         case "filingDate":
-          aVal = a.filingDate;
-          bVal = b.filingDate;
+          aVal = new Date(a.filingDate || 0).getTime();
+          bVal = new Date(b.filingDate || 0).getTime();
           break;
         case "reportingDelay":
           aVal = a.reportingDelay ?? -1;
           bVal = b.reportingDelay ?? -1;
           break;
         default:
-          aVal = a.transactionDate;
-          bVal = b.transactionDate;
+          aVal = new Date(a.transactionDate || 0).getTime();
+          bVal = new Date(b.transactionDate || 0).getTime();
           break;
       }
       if (typeof aVal === "string") {

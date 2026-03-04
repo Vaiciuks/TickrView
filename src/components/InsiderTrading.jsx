@@ -26,29 +26,29 @@ export default function InsiderTrading({ active, onSelectStock }) {
       let aVal, bVal;
       switch (sortCol) {
         case "filingDate":
-          aVal = a.filingDate;
-          bVal = b.filingDate;
+          aVal = new Date(a.tradeDate || a.filingDate || 0).getTime();
+          bVal = new Date(b.tradeDate || b.filingDate || 0).getTime();
           break;
         case "symbol":
-          aVal = a.symbol;
-          bVal = b.symbol;
+          aVal = a.symbol || "";
+          bVal = b.symbol || "";
           break;
         case "insiderName":
-          aVal = a.insiderName;
-          bVal = b.insiderName;
+          aVal = a.insiderName || "";
+          bVal = b.insiderName || "";
           break;
         case "price":
-          aVal = a.price;
-          bVal = b.price;
+          aVal = a.price || 0;
+          bVal = b.price || 0;
           break;
         case "qty":
-          aVal = Math.abs(a.qty);
-          bVal = Math.abs(b.qty);
+          aVal = Math.abs(a.qty || 0);
+          bVal = Math.abs(b.qty || 0);
           break;
         case "value":
         default:
-          aVal = a.value;
-          bVal = b.value;
+          aVal = a.value || 0;
+          bVal = b.value || 0;
           break;
       }
       if (typeof aVal === "string") {

@@ -70,8 +70,8 @@ router.get('/', withCache(300), async (req, res, next) => {
       }
     }
 
-    // Sort by filing date descending
-    allTrades.sort((a, b) => (b.filingDate || '').localeCompare(a.filingDate || ''));
+    // Sort by filing date descending (newest first)
+    allTrades.sort((a, b) => new Date(b.filingDate || 0).getTime() - new Date(a.filingDate || 0).getTime());
 
     res.json({
       count: allTrades.length,
