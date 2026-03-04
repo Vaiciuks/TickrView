@@ -1,6 +1,11 @@
 import { useState } from "react";
 
-const LOGO_URL = "https://assets.parqet.com/logos/symbol";
+const LOGO_SOURCES = [
+  (s) => `https://assets.parqet.com/logos/symbol/${s}`,
+  (s) => `https://financialmodelingprep.com/image-stock/${s}.png`,
+  (s) => `https://companiesmarketcap.com/img/company-logos/64/${s}.webp`,
+  (s) => `https://universal.hellopublic.com/companyLogos/${s}@3x.png`,
+];
 
 // Known symbols that need custom abbreviations + colors (futures, indices, crypto, commodities)
 const SYMBOL_ICONS = {
@@ -132,9 +137,7 @@ export default function StockLogo({ symbol, size = 28 }) {
   }
 
   // For regular stocks, try logo CDNs with fallback
-  const sources = [`${LOGO_URL}/${symbol}`];
-
-  if (sourceIdx >= sources.length) {
+  if (sourceIdx >= LOGO_SOURCES.length) {
     // All sources failed — show letter fallback
     const letter = (symbol || "?")[0];
     const color = getColor(symbol || "");
@@ -156,7 +159,7 @@ export default function StockLogo({ symbol, size = 28 }) {
   return (
     <img
       className="stock-logo"
-      src={sources[sourceIdx]}
+      src={LOGO_SOURCES[sourceIdx](symbol)}
       alt=""
       width={size}
       height={size}
