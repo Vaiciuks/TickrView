@@ -15,6 +15,7 @@ import { RoundedCandleSeries } from "../utils/roundedCandles.js";
 import StockLogo from "./StockLogo.jsx";
 import StaleDataBadge from "./StaleDataBadge.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
+import { useEarningsLookup } from "../hooks/useEarningsLookup.js";
 
 // Yahoo Finance caps intraday data at ~60 days for 5m/15m/30m and ~730 days for 1h.
 // Requesting a range beyond these limits causes Yahoo to silently return daily candles.
@@ -613,6 +614,9 @@ export default function ExpandedChart({
       cancelled = true;
     };
   }, [showSmartMoney, stock.symbol, smartMoneyData]);
+
+  // Earnings data (auto-load for full view)
+  const { data: earningsData, loading: earningsLoading } = useEarningsLookup(!compact ? stock.symbol : null);
 
   // Drawing tools state
   const [drawMode, setDrawMode] = useState("none");
@@ -2188,6 +2192,29 @@ export default function ExpandedChart({
                   <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
                 </svg>
               </button>
+            <button
+                className="expanded-stats-btn"
+                onClick={() => {
+                  document.getElementById('section-earnings')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                aria-label="Scroll to earnings"
+                title="Earnings"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+              </button>
             {onAddAlert && (
               <div className="alert-wrapper">
                 <button
@@ -2862,6 +2889,17 @@ export default function ExpandedChart({
                   <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
                 </svg>
               </button>
+              <button
+                className="chart-tool-btn"
+                onClick={() => {
+                  document.getElementById('section-earnings')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                title="Earnings"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+              </button>
               {onAddAlert && (
                 <button
                   ref={mobileAlertBtnRef}
@@ -3081,6 +3119,223 @@ export default function ExpandedChart({
               </div>
             </div>
           )}
+
+          {/* Earnings */}
+          <div className="stock-detail-section" id="section-earnings">
+            <div className="stock-detail-section-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Earnings — {stock.symbol}
+            </div>
+            {earningsLoading ? (
+              <div className="expanded-stats-loading">Loading earnings data...</div>
+            ) : earningsData ? (
+              <div className="stock-detail-earnings-content">
+                {/* Earnings Profile */}
+                <div className="el-profile-header" style={{ padding: "12px 18px 0" }}>
+                  <div className="el-profile-badges">
+                    {earningsData.streak && earningsData.streak.type !== "none" && earningsData.streak.count > 0 && (
+                      <span className={`el-streak-badge ${earningsData.streak.type}`}>
+                        {earningsData.streak.count}Q {earningsData.streak.type === "beat" ? "Beat" : earningsData.streak.type === "miss" ? "Miss" : "Met"} Streak
+                      </span>
+                    )}
+                    {earningsData.nextEarningsDate && (
+                      <span className="el-next-earnings">Next: {earningsData.nextEarningsDate}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Highlights */}
+                {earningsData.highlights?.length > 0 && (
+                  <div className="el-section el-highlights-section">
+                    <h3 className="el-section-title">Highlights</h3>
+                    <div className="el-highlights">
+                      {earningsData.highlights.map((h, i) => (
+                        <div key={i} className="el-highlight-item">
+                          <span className="el-highlight-dot" />
+                          <div className="el-highlight-content">
+                            <span className="el-highlight-title">{h.title}:</span> {h.detail}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* EPS History Chart */}
+                {(() => {
+                  const epsChart = earningsData.epsHistory?.filter(q => q.actual != null).slice(-12) || [];
+                  const epsMax = epsChart.length > 0 ? Math.max(...epsChart.flatMap(q => [Math.abs(q.actual ?? 0), Math.abs(q.estimate ?? 0)]), 0.01) : 1;
+                  if (!epsChart.length) return null;
+                  return (
+                    <div className="el-section">
+                      <h3 className="el-section-title">EPS History (Actual vs Estimate)</h3>
+                      <div className="el-bar-chart">
+                        {epsChart.map((q, i) => {
+                          const estH = q.estimate != null ? (Math.abs(q.estimate) / epsMax) * 100 : 0;
+                          const actH = q.actual != null ? (Math.abs(q.actual) / epsMax) * 100 : 0;
+                          const isBeat = q.beat === true;
+                          const isMiss = q.beat === false;
+                          const label = q.quarter && q.year ? `Q${q.quarter} '${String(q.year).slice(2)}` : q.period || "?";
+                          return (
+                            <div key={i} className="el-bar-group">
+                              <div className="el-bar-values">
+                                {q.actual != null && (
+                                  <span className={`el-bar-val ${isBeat ? "beat" : isMiss ? "miss" : ""}`}>
+                                    {q.actual >= 0 ? `$${q.actual.toFixed(2)}` : `-$${Math.abs(q.actual).toFixed(2)}`}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="el-bars">
+                                {q.estimate != null && <div className="el-bar estimate" style={{ height: `${Math.max(estH, 4)}%` }} title={`Est: $${q.estimate?.toFixed(2)}`} />}
+                                {q.actual != null && <div className={`el-bar actual ${isBeat ? "beat" : isMiss ? "miss" : ""}`} style={{ height: `${Math.max(actH, 4)}%` }} title={`Act: $${q.actual?.toFixed(2)}`} />}
+                              </div>
+                              <span className="el-bar-label">{label}</span>
+                              {isBeat && <span className="el-beat-indicator">&#10003;</span>}
+                              {isMiss && <span className="el-miss-indicator">&#10007;</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="el-chart-legend">
+                        <span className="el-legend-item"><span className="el-legend-dot estimate" /> Estimate</span>
+                        <span className="el-legend-item"><span className="el-legend-dot actual" /> Actual</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Revenue History Chart */}
+                {(() => {
+                  const revChart = earningsData.revenueHistory?.filter(q => q.revenueActual != null).slice(-12) || [];
+                  const revMax = revChart.length > 0 ? Math.max(...revChart.flatMap(q => [q.revenueActual ?? 0, q.revenueEstimate ?? 0]), 1) : 1;
+                  const revHasEstimates = revChart.some(q => q.revenueEstimate != null);
+                  if (!revChart.length) return null;
+                  const fmtRev = (val) => {
+                    if (val == null) return "--";
+                    if (Math.abs(val) >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
+                    if (Math.abs(val) >= 1e6) return `$${(val / 1e6).toFixed(0)}M`;
+                    return `$${val.toLocaleString()}`;
+                  };
+                  return (
+                    <div className="el-section">
+                      <h3 className="el-section-title">Revenue History{revHasEstimates ? " (Actual vs Estimate)" : ""}</h3>
+                      <div className="el-bar-chart">
+                        {revChart.map((q, i) => {
+                          const estH = q.revenueEstimate != null ? (q.revenueEstimate / revMax) * 100 : 0;
+                          const actH = q.revenueActual != null ? (q.revenueActual / revMax) * 100 : 0;
+                          const isBeat = q.beat === true;
+                          const isMiss = q.beat === false;
+                          const label = q.quarter && q.year ? `Q${q.quarter} '${String(q.year).slice(2)}` : q.date || "?";
+                          return (
+                            <div key={i} className="el-bar-group">
+                              <div className="el-bar-values">
+                                {q.revenueActual != null && (
+                                  <span className={`el-bar-val ${isBeat ? "beat" : isMiss ? "miss" : ""}`}>{fmtRev(q.revenueActual)}</span>
+                                )}
+                              </div>
+                              <div className="el-bars">
+                                {q.revenueEstimate != null && <div className="el-bar estimate" style={{ height: `${Math.max(estH, 4)}%` }} title={`Est: ${fmtRev(q.revenueEstimate)}`} />}
+                                {q.revenueActual != null && <div className={`el-bar actual ${isBeat ? "beat" : isMiss ? "miss" : ""}`} style={{ height: `${Math.max(actH, 4)}%` }} title={`Act: ${fmtRev(q.revenueActual)}`} />}
+                              </div>
+                              <span className="el-bar-label">{label}</span>
+                              {isBeat && <span className="el-beat-indicator">&#10003;</span>}
+                              {isMiss && <span className="el-miss-indicator">&#10007;</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="el-chart-legend">
+                        {revHasEstimates && <span className="el-legend-item"><span className="el-legend-dot estimate" /> Estimate</span>}
+                        <span className="el-legend-item"><span className="el-legend-dot actual" /> Actual</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Analyst Consensus */}
+                {(() => {
+                  const rec = earningsData.recommendation;
+                  const recTotal = rec ? rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell : 0;
+                  if (!rec || !recTotal) return null;
+                  return (
+                    <div className="el-section">
+                      <h3 className="el-section-title">Analyst Consensus</h3>
+                      <div className="el-consensus">
+                        <div className="el-consensus-bar">
+                          {rec.strongBuy > 0 && <div className="el-con-seg strong-buy" style={{ flex: rec.strongBuy }} title={`Strong Buy: ${rec.strongBuy}`}>{rec.strongBuy}</div>}
+                          {rec.buy > 0 && <div className="el-con-seg buy" style={{ flex: rec.buy }} title={`Buy: ${rec.buy}`}>{rec.buy}</div>}
+                          {rec.hold > 0 && <div className="el-con-seg hold" style={{ flex: rec.hold }} title={`Hold: ${rec.hold}`}>{rec.hold}</div>}
+                          {rec.sell > 0 && <div className="el-con-seg sell" style={{ flex: rec.sell }} title={`Sell: ${rec.sell}`}>{rec.sell}</div>}
+                          {rec.strongSell > 0 && <div className="el-con-seg strong-sell" style={{ flex: rec.strongSell }} title={`Strong Sell: ${rec.strongSell}`}>{rec.strongSell}</div>}
+                        </div>
+                        <div className="el-consensus-labels">
+                          <span className="el-con-label strong-buy">Strong Buy</span>
+                          <span className="el-con-label buy">Buy</span>
+                          <span className="el-con-label hold">Hold</span>
+                          <span className="el-con-label sell">Sell</span>
+                          <span className="el-con-label strong-sell">Strong Sell</span>
+                        </div>
+                        <div className="el-consensus-total">{recTotal} analysts · {rec.period}</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Surprise History Table */}
+                {(() => {
+                  const surpriseData = earningsData.epsHistory ? [...earningsData.epsHistory].filter(q => q.actual != null).reverse().slice(0, 8) : [];
+                  if (!surpriseData.length) return null;
+                  return (
+                    <div className="el-section">
+                      <h3 className="el-section-title">Earnings Surprise History</h3>
+                      <div className="smartmoney-table-wrap">
+                        <table className="smartmoney-table">
+                          <thead>
+                            <tr>
+                              <th>Quarter</th>
+                              <th>EPS Est.</th>
+                              <th>EPS Act.</th>
+                              <th>Surprise</th>
+                              <th>Result</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {surpriseData.map((q, i) => {
+                              const label = q.quarter && q.year ? `Q${q.quarter} '${String(q.year).slice(2)}` : q.period || "?";
+                              return (
+                                <tr key={i}>
+                                  <td>{label}</td>
+                                  <td>{q.estimate != null ? `$${q.estimate.toFixed(2)}` : "--"}</td>
+                                  <td className={q.beat === true ? "el-beat-text" : q.beat === false ? "el-miss-text" : ""}>
+                                    {q.actual != null ? `$${q.actual.toFixed(2)}` : "--"}
+                                  </td>
+                                  <td className={q.surprisePercent != null ? (q.surprisePercent >= 0 ? "el-beat-text" : "el-miss-text") : ""}>
+                                    {q.surprisePercent != null ? `${q.surprisePercent >= 0 ? "+" : ""}${q.surprisePercent.toFixed(2)}%` : "--"}
+                                  </td>
+                                  <td>
+                                    {q.beat === true && <span className="sentiment-badge bullish">BEAT</span>}
+                                    {q.beat === false && <span className="sentiment-badge bearish">MISS</span>}
+                                    {q.beat == null && <span className="sentiment-badge">--</span>}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* No data fallback */}
+                {!earningsData.epsHistory?.length && !earningsData.revenueHistory?.length && !earningsData.recommendation && (
+                  <div className="smartmoney-panel-empty" style={{ padding: "18px" }}>No earnings data available for {stock.symbol}</div>
+                )}
+              </div>
+            ) : (
+              <div className="expanded-stats-loading">No earnings data available</div>
+            )}
+          </div>
 
           {/* Smart Money */}
           <div className="stock-detail-section" id="section-smartmoney">
