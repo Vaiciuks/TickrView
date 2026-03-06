@@ -550,7 +550,7 @@ export default function ExpandedChart({
   useScrollLock(showNoteInput);
 
   // Key statistics panel
-  const [showStats, setShowStats] = useState(false);
+  const [showStats, setShowStats] = useState(!compact);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
@@ -575,7 +575,7 @@ export default function ExpandedChart({
   }, [showStats, stock.symbol, stats]);
 
   // Smart Money panel
-  const [showSmartMoney, setShowSmartMoney] = useState(false);
+  const [showSmartMoney, setShowSmartMoney] = useState(!compact);
   const [smartMoneyData, setSmartMoneyData] = useState(null);
   const [smartMoneyLoading, setSmartMoneyLoading] = useState(false);
   const [smartMoneySections, setSmartMoneySections] = useState({
@@ -2093,7 +2093,6 @@ export default function ExpandedChart({
   const modal = (
     <div
       className={`expanded-modal${compact ? " compact" : ""}`}
-      onClick={(e) => e.stopPropagation()}
     >
       <div className="expanded-header">
         <div className="expanded-header-left">
@@ -2118,13 +2117,11 @@ export default function ExpandedChart({
             )}
             {hasNews && (
               <button
-                className={`expanded-news-btn${showNews ? " active" : ""}`}
+                className="expanded-news-btn"
                 onClick={() => {
-                  setShowNews((prev) => !prev);
-                  setShowStats(false);
-                  setShowSmartMoney(false);
+                  document.getElementById('section-news')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                aria-label="Toggle news panel"
+                aria-label="Scroll to news"
                 title="News"
               >
                 <svg
@@ -2146,13 +2143,11 @@ export default function ExpandedChart({
             )}
             <div className="expanded-header-actions-secondary">
             <button
-                className={`expanded-stats-btn${showStats ? " active" : ""}`}
+                className="expanded-stats-btn"
                 onClick={() => {
-                  setShowStats((prev) => !prev);
-                  setShowNews(false);
-                  setShowSmartMoney(false);
+                  document.getElementById('section-stats')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                aria-label="Toggle key statistics"
+                aria-label="Scroll to statistics"
                 title="Key Statistics"
               >
                 <svg
@@ -2172,13 +2167,11 @@ export default function ExpandedChart({
                 </svg>
               </button>
             <button
-                className={`expanded-smartmoney-btn${showSmartMoney ? " active" : ""}`}
+                className="expanded-smartmoney-btn"
                 onClick={() => {
-                  setShowSmartMoney((prev) => !prev);
-                  setShowStats(false);
-                  setShowNews(false);
+                  document.getElementById('section-smartmoney')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                aria-label="Toggle smart money data"
+                aria-label="Scroll to smart money"
                 title="Smart Money"
               >
                 <svg
@@ -2848,11 +2841,9 @@ export default function ExpandedChart({
             <div className="chart-tools-extra">
               <span className="chart-tools-divider" />
               <button
-                className={`chart-tool-btn${showStats ? " chart-tool-btn--active" : ""}`}
+                className="chart-tool-btn"
                 onClick={() => {
-                  setShowStats((prev) => !prev);
-                  setShowNews(false);
-                  setShowSmartMoney(false);
+                  document.getElementById('section-stats')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 title="Key Statistics"
               >
@@ -2861,11 +2852,9 @@ export default function ExpandedChart({
                 </svg>
               </button>
               <button
-                className={`chart-tool-btn${showSmartMoney ? " chart-tool-btn--active" : ""}`}
+                className="chart-tool-btn"
                 onClick={() => {
-                  setShowSmartMoney((prev) => !prev);
-                  setShowStats(false);
-                  setShowNews(false);
+                  document.getElementById('section-smartmoney')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 title="Smart Money"
               >
@@ -3034,264 +3023,146 @@ export default function ExpandedChart({
           </div>
         )}
       </div>
-      {showNews && (
-        <>
-          <div className="panel-backdrop" onClick={() => setShowNews(false)} />
-          <div className="expanded-news-panel">
-            <div className="expanded-news-header">
-              <span>News for {stock.symbol}</span>
-              <button
-                className="expanded-news-close"
-                onClick={() => setShowNews(false)}
-              >
-                &times;
-              </button>
+      {/* ── Stock Detail Sections (scrollable below chart) ── */}
+      {!compact && (
+        <div className="stock-detail-sections">
+          {/* Key Statistics */}
+          <div className="stock-detail-section" id="section-stats">
+            <div className="stock-detail-section-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              Key Statistics
             </div>
-            {newsArticles.map((article, i) => (
-              <a
-                key={i}
-                className="expanded-news-item"
-                href={article.link}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="expanded-news-headline">{article.title}</span>
-                <span className="expanded-news-meta">
-                  {article.publisher} &middot; {timeAgo(article.publishedAt)}
-                </span>
-              </a>
-            ))}
+            {statsLoading ? (
+              <div className="expanded-stats-loading">Loading statistics...</div>
+            ) : stats ? (
+              <div className="stock-detail-stats-grid">
+                <div className="detail-stat-row"><span className="detail-stat-label">Open</span><span className="detail-stat-value">{fmtStatPrice(stats.open)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Prev Close</span><span className="detail-stat-value">{fmtStatPrice(stats.prevClose)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">High</span><span className="detail-stat-value" style={{color: "var(--green-primary)"}}>{fmtStatPrice(stats.high)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Low</span><span className="detail-stat-value" style={{color: "var(--red-primary)"}}>{fmtStatPrice(stats.low)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Volume</span><span className="detail-stat-value">{fmtStatVol(stats.volume)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Market Cap</span><span className="detail-stat-value">{fmtStatCap(stats.marketCap)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">P/E (TTM)</span><span className="detail-stat-value">{fmtStatNum(stats.peRatio)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">P/E (FWD)</span><span className="detail-stat-value">{fmtStatNum(stats.forwardPE)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">EPS (TTM)</span><span className="detail-stat-value">{fmtStatPrice(stats.eps)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Revenue</span><span className="detail-stat-value">{fmtStatCap(stats.revenue)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Net Income</span><span className="detail-stat-value">{fmtStatCap(stats.netIncome)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">52 Wk High</span><span className="detail-stat-value" style={{color: "var(--green-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekHigh)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">52 Wk Low</span><span className="detail-stat-value" style={{color: "var(--red-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekLow)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Beta</span><span className="detail-stat-value">{fmtStatNum(stats.beta)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Shares Out</span><span className="detail-stat-value">{fmtStatCap(stats.sharesOut)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Dividend</span><span className="detail-stat-value">{stats.dividendRate != null && Number.isFinite(stats.dividendRate) ? `$${stats.dividendRate.toFixed(2)}` : "--"}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Div Yield</span><span className="detail-stat-value">{stats.dividendYield != null && Number.isFinite(stats.dividendYield) ? `${stats.dividendYield.toFixed(2)}%` : "--"}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Analysts</span><span className="detail-stat-value">{stats.analysts || "--"}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Price Target</span><span className="detail-stat-value">{stats.priceTarget && Number.isFinite(stats.priceTarget) ? `$${stats.priceTarget.toFixed(2)}` : "--"}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Earnings Date</span><span className="detail-stat-value">{stats.earningsDate || "--"}</span></div>
+                {stats.sector && <div className="detail-stat-row"><span className="detail-stat-label">Sector</span><span className="detail-stat-value">{stats.sector}</span></div>}
+                {stats.industry && <div className="detail-stat-row"><span className="detail-stat-label">Industry</span><span className="detail-stat-value">{stats.industry}</span></div>}
+              </div>
+            ) : (
+              <div className="expanded-stats-loading">No statistics available</div>
+            )}
           </div>
-        </>
-      )}
-      {showSmartMoney && (
-        <>
-          <div
-            className="panel-backdrop"
-            onClick={() => setShowSmartMoney(false)}
-          />
-          <div className="expanded-smartmoney-panel">
-            <div className="expanded-smartmoney-header">
-              <span>Smart Money &mdash; {stock.symbol}</span>
-              <button
-                className="expanded-smartmoney-close"
-                onClick={() => setShowSmartMoney(false)}
-              >
-                &times;
-              </button>
+
+          {/* News */}
+          {newsArticles.length > 0 && (
+            <div className="stock-detail-section" id="section-news">
+              <div className="stock-detail-section-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+                News — {stock.symbol}
+              </div>
+              <div className="stock-detail-news-list">
+                {newsArticles.map((article, i) => (
+                  <a key={i} className="stock-detail-news-item" href={article.link} target="_blank" rel="noopener noreferrer">
+                    <span className="stock-detail-news-headline">{article.title}</span>
+                    <span className="stock-detail-news-meta">{article.publisher} &middot; {timeAgo(article.publishedAt)}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Smart Money */}
+          <div className="stock-detail-section" id="section-smartmoney">
+            <div className="stock-detail-section-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+              Smart Money — {stock.symbol}
             </div>
             {smartMoneyLoading ? (
-              <div className="expanded-stats-loading">
-                Loading smart money data...
-              </div>
+              <div className="expanded-stats-loading">Loading smart money data...</div>
             ) : smartMoneyData ? (
               <div className="smartmoney-panel-content">
-                {/* Insider Trading section */}
+                {/* Insider Trading */}
                 <div className="smartmoney-section">
-                  <div
-                    className="smartmoney-section-header"
-                    onClick={() =>
-                      setSmartMoneySections((s) => ({
-                        ...s,
-                        insider: !s.insider,
-                      }))
-                    }
-                  >
+                  <div className="smartmoney-section-header" onClick={() => setSmartMoneySections((s) => ({ ...s, insider: !s.insider }))}>
                     <span className="smartmoney-section-label">
-                      <span
-                        className={`smartmoney-section-chevron${smartMoneySections.insider ? " open" : ""}`}
-                      >
-                        &#9654;
-                      </span>
+                      <span className={`smartmoney-section-chevron${smartMoneySections.insider ? " open" : ""}`}>&#9654;</span>
                       Insider Trading
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-dim)" }}>
-                      {smartMoneyData.insider?.count ?? 0} trades
-                    </span>
+                    <span style={{ fontSize: 11, color: "var(--text-dim)" }}>{smartMoneyData.insider?.count ?? 0} trades</span>
                   </div>
                   {smartMoneySections.insider && (
                     <div className="smartmoney-section-body">
                       {smartMoneyData.insider?.trades?.length > 0 ? (
-                        smartMoneyData.insider.trades
-                          .slice(0, 5)
-                          .map((t, i) => (
-                            <div key={i} className="smartmoney-panel-trade">
-                              <span
-                                className={`sentiment-badge sm ${t.isBuy ? "bullish" : "bearish"}`}
-                              >
-                                {t.isBuy ? "BUY" : "SELL"}
-                              </span>
-                              <span className="smartmoney-panel-trade-name">
-                                {t.insiderName}
-                              </span>
-                              <span className="smartmoney-panel-trade-value">
-                                $
-                                {t.value >= 1e6
-                                  ? (t.value / 1e6).toFixed(1) + "M"
-                                  : t.value >= 1e3
-                                    ? (t.value / 1e3).toFixed(0) + "K"
-                                    : t.value}
-                              </span>
-                              <span className="smartmoney-panel-trade-date">
-                                {t.tradeDate}
-                              </span>
-                            </div>
-                          ))
+                        smartMoneyData.insider.trades.slice(0, 5).map((t, i) => (
+                          <div key={i} className="smartmoney-panel-trade">
+                            <span className={`sentiment-badge sm ${t.isBuy ? "bullish" : "bearish"}`}>{t.isBuy ? "BUY" : "SELL"}</span>
+                            <span className="smartmoney-panel-trade-name">{t.insiderName}</span>
+                            <span className="smartmoney-panel-trade-value">${t.value >= 1e6 ? (t.value / 1e6).toFixed(1) + "M" : t.value >= 1e3 ? (t.value / 1e3).toFixed(0) + "K" : t.value}</span>
+                            <span className="smartmoney-panel-trade-date">{t.tradeDate}</span>
+                          </div>
+                        ))
                       ) : (
-                        <div className="smartmoney-panel-empty">
-                          No insider trades found
-                        </div>
+                        <div className="smartmoney-panel-empty">No insider trades found</div>
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* Options Flow section */}
+                {/* Options Flow */}
                 <div className="smartmoney-section">
-                  <div
-                    className="smartmoney-section-header"
-                    onClick={() =>
-                      setSmartMoneySections((s) => ({
-                        ...s,
-                        options: !s.options,
-                      }))
-                    }
-                  >
+                  <div className="smartmoney-section-header" onClick={() => setSmartMoneySections((s) => ({ ...s, options: !s.options }))}>
                     <span className="smartmoney-section-label">
-                      <span
-                        className={`smartmoney-section-chevron${smartMoneySections.options ? " open" : ""}`}
-                      >
-                        &#9654;
-                      </span>
+                      <span className={`smartmoney-section-chevron${smartMoneySections.options ? " open" : ""}`}>&#9654;</span>
                       Options Flow
                     </span>
                     {smartMoneyData.options?.summary && (
-                      <span
-                        className={`sentiment-badge sm ${smartMoneyData.options.summary.sentiment}`}
-                      >
-                        {smartMoneyData.options.summary.sentiment}
-                      </span>
+                      <span className={`sentiment-badge sm ${smartMoneyData.options.summary.sentiment}`}>{smartMoneyData.options.summary.sentiment}</span>
                     )}
                   </div>
                   {smartMoneySections.options && (
                     <div className="smartmoney-section-body">
                       {smartMoneyData.options?.summary ? (
                         <>
-                          <div className="smartmoney-panel-row">
-                            <span className="smartmoney-panel-row-label">
-                              Put/Call Ratio
-                            </span>
-                            <span className="smartmoney-panel-row-value">
-                              {smartMoneyData.options.summary.putCallRatio ??
-                                "—"}
-                            </span>
-                          </div>
-                          <div className="smartmoney-panel-row">
-                            <span className="smartmoney-panel-row-label">
-                              Net Premium
-                            </span>
-                            <span
-                              className="smartmoney-panel-row-value"
-                              style={{
-                                color:
-                                  smartMoneyData.options.summary.netPremium >= 0
-                                    ? "var(--green-primary)"
-                                    : "var(--red-primary)",
-                              }}
-                            >
-                              $
-                              {Math.abs(
-                                smartMoneyData.options.summary.netPremium,
-                              ) >= 1e6
-                                ? (
-                                    smartMoneyData.options.summary.netPremium /
-                                    1e6
-                                  ).toFixed(1) + "M"
-                                : Math.abs(
-                                      smartMoneyData.options.summary.netPremium,
-                                    ) >= 1e3
-                                  ? (
-                                      smartMoneyData.options.summary
-                                        .netPremium / 1e3
-                                    ).toFixed(0) + "K"
-                                  : smartMoneyData.options.summary.netPremium}
-                            </span>
-                          </div>
-                          <div className="smartmoney-panel-row">
-                            <span className="smartmoney-panel-row-label">
-                              Call Volume
-                            </span>
-                            <span className="smartmoney-panel-row-value">
-                              {smartMoneyData.options.summary.totalCallVolume?.toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="smartmoney-panel-row">
-                            <span className="smartmoney-panel-row-label">
-                              Put Volume
-                            </span>
-                            <span className="smartmoney-panel-row-value">
-                              {smartMoneyData.options.summary.totalPutVolume?.toLocaleString()}
-                            </span>
-                          </div>
+                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Put/Call Ratio</span><span className="smartmoney-panel-row-value">{smartMoneyData.options.summary.putCallRatio ?? "—"}</span></div>
+                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Net Premium</span><span className="smartmoney-panel-row-value" style={{ color: smartMoneyData.options.summary.netPremium >= 0 ? "var(--green-primary)" : "var(--red-primary)" }}>${Math.abs(smartMoneyData.options.summary.netPremium) >= 1e6 ? (smartMoneyData.options.summary.netPremium / 1e6).toFixed(1) + "M" : Math.abs(smartMoneyData.options.summary.netPremium) >= 1e3 ? (smartMoneyData.options.summary.netPremium / 1e3).toFixed(0) + "K" : smartMoneyData.options.summary.netPremium}</span></div>
+                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Call Volume</span><span className="smartmoney-panel-row-value">{smartMoneyData.options.summary.totalCallVolume?.toLocaleString()}</span></div>
+                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Put Volume</span><span className="smartmoney-panel-row-value">{smartMoneyData.options.summary.totalPutVolume?.toLocaleString()}</span></div>
                           {smartMoneyData.options.unusual?.length > 0 && (
                             <>
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  fontWeight: 600,
-                                  color: "#ffc107",
-                                  marginTop: 8,
-                                  marginBottom: 4,
-                                }}
-                              >
-                                Top Unusual
-                              </div>
-                              {smartMoneyData.options.unusual
-                                .slice(0, 3)
-                                .map((u, i) => (
-                                  <div
-                                    key={i}
-                                    className="smartmoney-panel-trade"
-                                  >
-                                    <span
-                                      className={`sentiment-badge sm ${u.sentiment}`}
-                                    >
-                                      {u.type}
-                                    </span>
-                                    <span className="smartmoney-panel-trade-name">
-                                      ${u.strike} strike
-                                    </span>
-                                    <span className="smartmoney-panel-trade-value">
-                                      Vol: {u.volume?.toLocaleString()}
-                                    </span>
-                                  </div>
-                                ))}
+                              <div style={{ fontSize: 11, fontWeight: 600, color: "#ffc107", marginTop: 8, marginBottom: 4 }}>Top Unusual</div>
+                              {smartMoneyData.options.unusual.slice(0, 3).map((u, i) => (
+                                <div key={i} className="smartmoney-panel-trade">
+                                  <span className={`sentiment-badge sm ${u.sentiment}`}>{u.type}</span>
+                                  <span className="smartmoney-panel-trade-name">${u.strike} strike</span>
+                                  <span className="smartmoney-panel-trade-value">Vol: {u.volume?.toLocaleString()}</span>
+                                </div>
+                              ))}
                             </>
                           )}
                         </>
                       ) : (
-                        <div className="smartmoney-panel-empty">
-                          No options data
-                        </div>
+                        <div className="smartmoney-panel-empty">No options data</div>
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* Short Interest section */}
+                {/* Short Interest */}
                 <div className="smartmoney-section">
-                  <div
-                    className="smartmoney-section-header"
-                    onClick={() =>
-                      setSmartMoneySections((s) => ({ ...s, short: !s.short }))
-                    }
-                  >
+                  <div className="smartmoney-section-header" onClick={() => setSmartMoneySections((s) => ({ ...s, short: !s.short }))}>
                     <span className="smartmoney-section-label">
-                      <span
-                        className={`smartmoney-section-chevron${smartMoneySections.short ? " open" : ""}`}
-                      >
-                        &#9654;
-                      </span>
+                      <span className={`smartmoney-section-chevron${smartMoneySections.short ? " open" : ""}`}>&#9654;</span>
                       Short Interest
                     </span>
                   </div>
@@ -3299,49 +3170,12 @@ export default function ExpandedChart({
                     <div className="smartmoney-section-body">
                       {smartMoneyData.short ? (
                         <>
-                          <div className="smartmoney-panel-row">
-                            <span className="smartmoney-panel-row-label">
-                              Short % Float
-                            </span>
-                            <span className="smartmoney-panel-row-value value-highlight">
-                              {smartMoneyData.short.shortPercentOfFloat != null
-                                ? (
-                                    smartMoneyData.short.shortPercentOfFloat *
-                                    100
-                                  ).toFixed(1) + "%"
-                                : "—"}
-                            </span>
-                          </div>
-                          <div className="smartmoney-panel-row">
-                            <span className="smartmoney-panel-row-label">
-                              Days to Cover
-                            </span>
-                            <span className="smartmoney-panel-row-value">
-                              {smartMoneyData.short.shortRatio?.toFixed(1) ??
-                                "—"}
-                            </span>
-                          </div>
-                          <div className="smartmoney-panel-row">
-                            <span className="smartmoney-panel-row-label">
-                              Shares Short
-                            </span>
-                            <span className="smartmoney-panel-row-value">
-                              {smartMoneyData.short.sharesShort
-                                ? smartMoneyData.short.sharesShort >= 1e6
-                                  ? (
-                                      smartMoneyData.short.sharesShort / 1e6
-                                    ).toFixed(1) + "M"
-                                  : (
-                                      smartMoneyData.short.sharesShort / 1e3
-                                    ).toFixed(0) + "K"
-                                : "—"}
-                            </span>
-                          </div>
+                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Short % Float</span><span className="smartmoney-panel-row-value value-highlight">{smartMoneyData.short.shortPercentOfFloat != null ? (smartMoneyData.short.shortPercentOfFloat * 100).toFixed(1) + "%" : "—"}</span></div>
+                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Days to Cover</span><span className="smartmoney-panel-row-value">{smartMoneyData.short.shortRatio?.toFixed(1) ?? "—"}</span></div>
+                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Shares Short</span><span className="smartmoney-panel-row-value">{smartMoneyData.short.sharesShort ? smartMoneyData.short.sharesShort >= 1e6 ? (smartMoneyData.short.sharesShort / 1e6).toFixed(1) + "M" : (smartMoneyData.short.sharesShort / 1e3).toFixed(0) + "K" : "—"}</span></div>
                         </>
                       ) : (
-                        <div className="smartmoney-panel-empty">
-                          No short interest data
-                        </div>
+                        <div className="smartmoney-panel-empty">No short interest data</div>
                       )}
                     </div>
                   )}
@@ -3351,120 +3185,7 @@ export default function ExpandedChart({
               <div className="expanded-stats-loading">No data available</div>
             )}
           </div>
-        </>
-      )}
-      {showStats && (
-        <>
-          <div className="panel-backdrop" onClick={() => setShowStats(false)} />
-          <div className="expanded-stats-panel">
-            <div className="expanded-stats-header">
-              <span>Key Statistics</span>
-              <button
-                className="expanded-stats-close"
-                onClick={() => setShowStats(false)}
-              >
-                &times;
-              </button>
-            </div>
-            {statsLoading ? (
-              <div className="expanded-stats-loading">
-                Loading statistics...
-              </div>
-            ) : stats ? (
-              <div className="expanded-stats-table">
-                <StatsRow label="Open" value={fmtStatPrice(stats.open)} />
-                <StatsRow
-                  label="Prev Close"
-                  value={fmtStatPrice(stats.prevClose)}
-                />
-                <StatsRow
-                  label="High"
-                  value={fmtStatPrice(stats.high)}
-                  color="green"
-                />
-                <StatsRow
-                  label="Low"
-                  value={fmtStatPrice(stats.low)}
-                  color="red"
-                />
-                <StatsRow label="Volume" value={fmtStatVol(stats.volume)} />
-                <StatsRow
-                  label="Market Cap"
-                  value={fmtStatCap(stats.marketCap)}
-                />
-                <StatsRow label="P/E (TTM)" value={fmtStatNum(stats.peRatio)} />
-                <StatsRow
-                  label="P/E (FWD)"
-                  value={fmtStatNum(stats.forwardPE)}
-                />
-                <StatsRow label="EPS (TTM)" value={fmtStatPrice(stats.eps)} />
-                <StatsRow label="Revenue" value={fmtStatCap(stats.revenue)} />
-                <StatsRow
-                  label="Net Income"
-                  value={fmtStatCap(stats.netIncome)}
-                />
-                <StatsRow
-                  label="52 Wk High"
-                  value={fmtStatPrice(stats.fiftyTwoWeekHigh)}
-                  color="green"
-                />
-                <StatsRow
-                  label="52 Wk Low"
-                  value={fmtStatPrice(stats.fiftyTwoWeekLow)}
-                  color="red"
-                />
-                <StatsRow label="Beta" value={fmtStatNum(stats.beta)} />
-                <StatsRow
-                  label="Shares Out"
-                  value={fmtStatCap(stats.sharesOut)}
-                />
-                <StatsRow
-                  label="Dividend"
-                  value={
-                    stats.dividendRate != null && Number.isFinite(stats.dividendRate)
-                      ? `$${stats.dividendRate.toFixed(2)}`
-                      : "--"
-                  }
-                />
-                <StatsRow
-                  label="Div Yield"
-                  value={
-                    stats.dividendYield != null && Number.isFinite(stats.dividendYield)
-                      ? `${stats.dividendYield.toFixed(2)}%`
-                      : "--"
-                  }
-                />
-                <StatsRow
-                  label="Analysts"
-                  value={stats.analysts || "--"}
-                  highlight
-                />
-                <StatsRow
-                  label="Price Target"
-                  value={
-                    stats.priceTarget && Number.isFinite(stats.priceTarget)
-                      ? `$${stats.priceTarget.toFixed(2)}`
-                      : "--"
-                  }
-                />
-                <StatsRow
-                  label="Earnings Date"
-                  value={stats.earningsDate || "--"}
-                />
-                {stats.sector && (
-                  <StatsRow label="Sector" value={stats.sector} />
-                )}
-                {stats.industry && (
-                  <StatsRow label="Industry" value={stats.industry} />
-                )}
-              </div>
-            ) : (
-              <div className="expanded-stats-loading">
-                No statistics available
-              </div>
-            )}
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
@@ -3473,7 +3194,7 @@ export default function ExpandedChart({
   if (compact) return modal;
 
   return (
-    <div className="expanded-overlay" onClick={onClose}>
+    <div className="expanded-overlay">
       {modal}
     </div>
   );

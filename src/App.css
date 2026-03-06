@@ -1821,14 +1821,21 @@ textarea {
   position: fixed;
   inset: 0;
   z-index: 100;
+  background: var(--bg-primary);
+  overflow-y: auto;
+  animation: fade-in 0.2s ease;
+  overscroll-behavior: contain;
+}
+
+/* Keep original overlay style for multi-chart grid */
+.expanded-overlay:has(.expanded-grid) {
   background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fade-in 0.2s ease;
-  overscroll-behavior: contain;
+  overflow-y: hidden;
 }
 
 @keyframes fade-in {
@@ -1843,18 +1850,13 @@ textarea {
 
 .expanded-modal {
   position: relative;
-  width: 92vw;
-  height: 85vh;
+  width: 100%;
   max-width: 1400px;
+  margin: 0 auto;
   background: var(--bg-primary);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.6),
-    0 0 1px rgba(255, 255, 255, 0.05);
+  min-height: 100vh;
 }
 
 /* ── Multi-chart grid ── */
@@ -2126,10 +2128,12 @@ textarea {
 }
 
 .expanded-chart-area {
-  flex: 1;
   position: relative;
   display: flex;
   flex-direction: column;
+  height: 70vh;
+  min-height: 400px;
+  max-height: 800px;
   overflow: hidden;
 }
 
@@ -6380,7 +6384,7 @@ textarea {
 
   .expanded-modal {
     width: 100%;
-    height: 100%;
+    min-height: 100%;
     max-width: none;
     border-radius: 0;
     touch-action: pan-x pan-y;
@@ -10533,6 +10537,129 @@ textarea {
   font-size: 12px;
   color: var(--text-dim);
   text-align: center;
+}
+
+/* ── Stock Detail Sections (below chart) ── */
+
+.stock-detail-sections {
+  width: 100%;
+  padding: 24px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.stock-detail-section {
+  background: var(--bg-card, var(--bg-secondary));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.stock-detail-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.stock-detail-section-header svg {
+  opacity: 0.7;
+}
+
+.stock-detail-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.stock-detail-stats-grid .detail-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 18px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
+}
+
+.stock-detail-stats-grid .detail-stat-row:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.detail-stat-label {
+  color: var(--text-dim);
+}
+
+.detail-stat-value {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.stock-detail-news-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.stock-detail-news-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
+  text-decoration: none;
+  transition: background var(--transition-fast);
+}
+
+.stock-detail-news-item:last-child {
+  border-bottom: none;
+}
+
+.stock-detail-news-item:hover {
+  background: var(--hover-overlay);
+}
+
+.stock-detail-news-headline {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.stock-detail-news-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Smart money sections inside detail page — wider layout */
+.stock-detail-section .smartmoney-panel-content {
+  padding: 0;
+}
+
+.stock-detail-section .smartmoney-section-body {
+  padding: 0 18px 14px;
+}
+
+.stock-detail-section .smartmoney-section-header {
+  padding: 12px 18px;
+}
+
+@media (max-width: 768px) {
+  .stock-detail-sections {
+    padding: 12px 12px 24px;
+    gap: 16px;
+  }
+
+  .stock-detail-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .expanded-chart-area {
+    height: 55vh;
+    min-height: 300px;
+  }
 }
 
 /* Responsive */
