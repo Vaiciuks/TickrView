@@ -6,7 +6,8 @@ export const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit
 let cachedCrumb = null;
 let cachedCookie = null;
 let crumbExpiry = 0;
-const CRUMB_TTL = 30 * 60 * 1000; // 30 minutes
+let pendingCrumbPromise = null; // mutex: only one crumb fetch at a time
+const CRUMB_TTL = 55 * 60 * 1000; // 55 minutes (Yahoo cookies last ~1hr)
 
 // Retry with exponential backoff for 429 rate limiting
 async function withRetry(fn, maxRetries = 3) {
@@ -19,16 +20,31 @@ async function withRetry(fn, maxRetries = 3) {
 }
 
 export async function getYahooCrumb() {
+  // Return cached crumb if still valid
   if (cachedCrumb && cachedCookie && Date.now() < crumbExpiry) {
     return { crumb: cachedCrumb, cookie: cachedCookie };
   }
 
+  // Mutex: if another request is already fetching, wait for it
+  if (pendingCrumbPromise) {
+    return pendingCrumbPromise;
+  }
+
+  pendingCrumbPromise = _fetchCrumb();
+  try {
+    return await pendingCrumbPromise;
+  } finally {
+    pendingCrumbPromise = null;
+  }
+}
+
+async function _fetchCrumb() {
   // Step 1: Hit fc.yahoo.com to get the A3 session cookie
-  const initRes = await fetch('https://fc.yahoo.com', {
+  const initRes = await withRetry(() => fetch('https://fc.yahoo.com', {
     headers: { 'User-Agent': USER_AGENT },
     redirect: 'manual',
     signal: AbortSignal.timeout(8000),
-  });
+  }));
 
   // Extract Set-Cookie header (A3 cookie)
   const setCookies = initRes.headers.getSetCookie?.() || [];
@@ -50,13 +66,13 @@ export async function getYahooCrumb() {
   }
 
   // Step 2: Get crumb using the cookie
-  const crumbRes = await fetch('https://query2.finance.yahoo.com/v1/test/getcrumb', {
+  const crumbRes = await withRetry(() => fetch('https://query2.finance.yahoo.com/v1/test/getcrumb', {
     headers: {
       'User-Agent': USER_AGENT,
       'Cookie': cookie,
     },
     signal: AbortSignal.timeout(8000),
-  });
+  }));
 
   if (!crumbRes.ok) {
     throw new Error(`Failed to get crumb: ${crumbRes.status}`);

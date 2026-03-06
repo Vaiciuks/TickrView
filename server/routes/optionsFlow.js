@@ -112,34 +112,41 @@ router.get('/:symbol', withCache(60), async (req, res, next) => {
 });
 
 // Bulk scan popular symbols
-router.get('/', withCache(120), async (req, res, next) => {
+router.get('/', withCache(300), async (req, res, next) => {
   try {
     const POPULAR = [
       'SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'META', 'GOOGL', 'AMD',
       'NFLX', 'COIN', 'PLTR', 'SOFI', 'BAC', 'JPM', 'XOM', 'INTC', 'DIS', 'NIO',
     ];
 
-    const results = await Promise.allSettled(
-      POPULAR.map(async sym => {
-        const chain = await fetchOptionsChain(sym);
-        if (!chain) return null;
-        const { items: unusual, totalUnusualPremium, totalCount } = detectUnusualActivity(chain.calls, chain.puts);
-        const summary = buildSummary(chain.calls, chain.puts);
+    // Fetch in batches of 5 to avoid Yahoo rate limits
+    const allResults = [];
+    for (let i = 0; i < POPULAR.length; i += 5) {
+      const batch = POPULAR.slice(i, i + 5);
+      const batchResults = await Promise.allSettled(
+        batch.map(async sym => {
+          const chain = await fetchOptionsChain(sym);
+          if (!chain) return null;
+          const { items: unusual, totalUnusualPremium, totalCount } = detectUnusualActivity(chain.calls, chain.puts);
+          const summary = buildSummary(chain.calls, chain.puts);
 
-        return {
-          symbol: sym,
-          name: chain.quote.shortName || sym,
-          stockPrice: chain.quote.regularMarketPrice || 0,
-          changePercent: chain.quote.regularMarketChangePercent || 0,
-          ...summary,
-          unusualCount: totalCount,
-          unusualPremium: totalUnusualPremium,
-          topUnusual: unusual.slice(0, 3),
-        };
-      })
-    );
+          return {
+            symbol: sym,
+            name: chain.quote.shortName || sym,
+            stockPrice: chain.quote.regularMarketPrice || 0,
+            changePercent: chain.quote.regularMarketChangePercent || 0,
+            ...summary,
+            unusualCount: totalCount,
+            unusualPremium: totalUnusualPremium,
+            topUnusual: unusual.slice(0, 3),
+          };
+        })
+      );
+      allResults.push(...batchResults);
+      if (i + 5 < POPULAR.length) await new Promise(r => setTimeout(r, 300));
+    }
 
-    const stocks = results
+    const stocks = allResults
       .filter(r => r.status === 'fulfilled' && r.value)
       .map(r => r.value)
       .sort((a, b) => b.totalPremium - a.totalPremium);

@@ -55,7 +55,7 @@ async function fetchShortForSymbol(symbol) {
 // Bulk: popular stocks sorted by short % float
 router.get('/', withCache(300), async (req, res, next) => {
   try {
-    // Fetch in batches of 5 to avoid overwhelming the API
+    // Fetch in batches of 5 with delay to avoid Yahoo rate limits
     const results = [];
     for (let i = 0; i < SYMBOLS.length; i += 5) {
       const batch = SYMBOLS.slice(i, i + 5);
@@ -65,6 +65,8 @@ router.get('/', withCache(300), async (req, res, next) => {
       for (const r of batchResults) {
         if (r.status === 'fulfilled' && r.value) results.push(r.value);
       }
+      // Small delay between batches to avoid 429s
+      if (i + 5 < SYMBOLS.length) await new Promise(r => setTimeout(r, 300));
     }
 
     results.sort((a, b) => (b.shortPercentOfFloat || 0) - (a.shortPercentOfFloat || 0));
