@@ -10622,30 +10622,6 @@ textarea {
   font-weight: 500;
 }
 
-/* Chart + News sidebar layout on desktop */
-.expanded-chart-with-sidebar {
-  display: flex;
-}
-.expanded-chart-with-sidebar > .expanded-chart-area {
-  flex: 1;
-  min-width: 0;
-}
-.stock-detail-news-sidebar {
-  flex: 0 0 300px;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
-  background: var(--bg-card, var(--bg-secondary));
-  overflow: hidden;
-}
-.stock-detail-news-sidebar .stock-detail-section-header {
-  flex-shrink: 0;
-}
-.stock-detail-news-sidebar .stock-detail-news-list {
-  overflow-y: auto;
-  flex: 1;
-}
-
 .stock-detail-news-list {
   display: flex;
   flex-direction: column;
@@ -10709,18 +10685,6 @@ textarea {
 
 .stock-detail-section .smartmoney-section-header {
   padding: 12px 18px;
-}
-
-@media (max-width: 1024px) {
-  .expanded-chart-with-sidebar {
-    flex-direction: column;
-  }
-  .stock-detail-news-sidebar {
-    flex: unset;
-    border-left: none;
-    border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
-    max-height: 300px;
-  }
 }
 
 @media (max-width: 768px) {
