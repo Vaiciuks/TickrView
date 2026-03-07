@@ -489,7 +489,7 @@ export async function fetchNews(symbol) {
     const params = new URLSearchParams({
       q: symbol,
       quotesCount: '0',
-      newsCount: '5',
+      newsCount: '6',
       listsCount: '0',
     });
 
