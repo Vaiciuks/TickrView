@@ -10691,22 +10691,20 @@ textarea {
 }
 
 .stock-detail-news-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
 }
 
 .stock-detail-news-item {
   display: flex;
   gap: 12px;
-  padding: 12px 18px;
-  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
+  padding: 14px 18px;
   text-decoration: none;
   transition: background var(--transition-fast);
   align-items: flex-start;
-}
-
-.stock-detail-news-item:last-child {
-  border-bottom: none;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.03));
 }
 
 .stock-detail-news-item:hover {
@@ -10714,9 +10712,9 @@ textarea {
 }
 
 .stock-detail-news-thumb {
-  flex: 0 0 72px;
-  height: 52px;
-  border-radius: 6px;
+  flex: 0 0 80px;
+  height: 56px;
+  border-radius: 8px;
   background-size: cover;
   background-position: center;
   background-color: var(--bg-tertiary, rgba(255,255,255,0.04));
@@ -10742,10 +10740,9 @@ textarea {
   color: var(--text-dim);
 }
 
-/* Smart money sections inside detail page — condensed layout */
+/* Smart money sections inside detail page */
 .stock-detail-section .smartmoney-panel-content {
   padding: 0;
-  max-width: 520px;
 }
 
 .stock-detail-section .smartmoney-section-body {
@@ -10754,7 +10751,28 @@ textarea {
 
 .stock-detail-section .smartmoney-section-header {
   padding: 12px 18px;
-  max-width: 520px;
+}
+
+/* Options/Short rows use 2-col grid to fill width */
+.stock-detail-section .smartmoney-section-body .smartmoney-panel-row {
+  padding: 5px 0;
+}
+.smartmoney-rows-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+}
+/* Insider trades in 2-col grid */
+.smartmoney-trades-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 24px;
+}
+.smartmoney-trades-grid .smartmoney-panel-trade {
+  border-bottom: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 @media (max-width: 768px) {
@@ -10772,9 +10790,19 @@ textarea {
     min-height: 300px;
   }
 
+  .stock-detail-news-list {
+    grid-template-columns: 1fr;
+  }
+
   .stock-detail-news-thumb {
     flex: 0 0 56px;
     height: 42px;
+  }
+
+  .smartmoney-rows-grid,
+  .smartmoney-trades-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 }
 

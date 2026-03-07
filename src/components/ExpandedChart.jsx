@@ -3453,14 +3453,16 @@ export default function ExpandedChart({
                   {smartMoneySections.insider && (
                     <div className="smartmoney-section-body">
                       {smartMoneyData.insider?.trades?.length > 0 ? (
-                        smartMoneyData.insider.trades.slice(0, 5).map((t, i) => (
-                          <div key={i} className="smartmoney-panel-trade">
-                            <span className={`sentiment-badge sm ${t.isBuy ? "bullish" : "bearish"}`}>{t.isBuy ? "BUY" : "SELL"}</span>
-                            <span className="smartmoney-panel-trade-name">{t.insiderName}</span>
-                            <span className="smartmoney-panel-trade-value">${t.value >= 1e6 ? (t.value / 1e6).toFixed(1) + "M" : t.value >= 1e3 ? (t.value / 1e3).toFixed(0) + "K" : t.value}</span>
-                            <span className="smartmoney-panel-trade-date">{t.tradeDate}</span>
-                          </div>
-                        ))
+                        <div className="smartmoney-trades-grid">
+                          {smartMoneyData.insider.trades.slice(0, 6).map((t, i) => (
+                            <div key={i} className="smartmoney-panel-trade">
+                              <span className={`sentiment-badge sm ${t.isBuy ? "bullish" : "bearish"}`}>{t.isBuy ? "BUY" : "SELL"}</span>
+                              <span className="smartmoney-panel-trade-name">{t.insiderName}</span>
+                              <span className="smartmoney-panel-trade-value">${t.value >= 1e6 ? (t.value / 1e6).toFixed(1) + "M" : t.value >= 1e3 ? (t.value / 1e3).toFixed(0) + "K" : t.value}</span>
+                              <span className="smartmoney-panel-trade-date">{t.tradeDate}</span>
+                            </div>
+                          ))}
+                        </div>
                       ) : (
                         <div className="smartmoney-panel-empty">No insider trades found</div>
                       )}
@@ -3483,20 +3485,24 @@ export default function ExpandedChart({
                     <div className="smartmoney-section-body">
                       {smartMoneyData.options?.summary ? (
                         <>
-                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Put/Call Ratio</span><span className="smartmoney-panel-row-value">{smartMoneyData.options.summary.putCallRatio ?? "—"}</span></div>
-                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Net Premium</span><span className="smartmoney-panel-row-value" style={{ color: smartMoneyData.options.summary.netPremium >= 0 ? "var(--green-primary)" : "var(--red-primary)" }}>${Math.abs(smartMoneyData.options.summary.netPremium) >= 1e6 ? (smartMoneyData.options.summary.netPremium / 1e6).toFixed(1) + "M" : Math.abs(smartMoneyData.options.summary.netPremium) >= 1e3 ? (smartMoneyData.options.summary.netPremium / 1e3).toFixed(0) + "K" : smartMoneyData.options.summary.netPremium}</span></div>
-                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Call Volume</span><span className="smartmoney-panel-row-value">{smartMoneyData.options.summary.totalCallVolume?.toLocaleString()}</span></div>
-                          <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Put Volume</span><span className="smartmoney-panel-row-value">{smartMoneyData.options.summary.totalPutVolume?.toLocaleString()}</span></div>
+                          <div className="smartmoney-rows-grid">
+                            <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Put/Call Ratio</span><span className="smartmoney-panel-row-value">{smartMoneyData.options.summary.putCallRatio ?? "—"}</span></div>
+                            <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Net Premium</span><span className="smartmoney-panel-row-value" style={{ color: smartMoneyData.options.summary.netPremium >= 0 ? "var(--green-primary)" : "var(--red-primary)" }}>${Math.abs(smartMoneyData.options.summary.netPremium) >= 1e6 ? (smartMoneyData.options.summary.netPremium / 1e6).toFixed(1) + "M" : Math.abs(smartMoneyData.options.summary.netPremium) >= 1e3 ? (smartMoneyData.options.summary.netPremium / 1e3).toFixed(0) + "K" : smartMoneyData.options.summary.netPremium}</span></div>
+                            <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Call Volume</span><span className="smartmoney-panel-row-value">{smartMoneyData.options.summary.totalCallVolume?.toLocaleString()}</span></div>
+                            <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Put Volume</span><span className="smartmoney-panel-row-value">{smartMoneyData.options.summary.totalPutVolume?.toLocaleString()}</span></div>
+                          </div>
                           {smartMoneyData.options.unusual?.length > 0 && (
                             <>
                               <div style={{ fontSize: 11, fontWeight: 600, color: "#ffc107", marginTop: 8, marginBottom: 4 }}>Top Unusual</div>
-                              {smartMoneyData.options.unusual.slice(0, 3).map((u, i) => (
-                                <div key={i} className="smartmoney-panel-trade">
-                                  <span className={`sentiment-badge sm ${u.sentiment}`}>{u.type}</span>
-                                  <span className="smartmoney-panel-trade-name">${u.strike} strike</span>
-                                  <span className="smartmoney-panel-trade-value">Vol: {u.volume?.toLocaleString()}</span>
-                                </div>
-                              ))}
+                              <div className="smartmoney-trades-grid">
+                                {smartMoneyData.options.unusual.slice(0, 4).map((u, i) => (
+                                  <div key={i} className="smartmoney-panel-trade">
+                                    <span className={`sentiment-badge sm ${u.sentiment}`}>{u.type}</span>
+                                    <span className="smartmoney-panel-trade-name">${u.strike} strike</span>
+                                    <span className="smartmoney-panel-trade-value">Vol: {u.volume?.toLocaleString()}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </>
                           )}
                         </>
@@ -3518,11 +3524,11 @@ export default function ExpandedChart({
                   {smartMoneySections.short && (
                     <div className="smartmoney-section-body">
                       {smartMoneyData.short ? (
-                        <>
+                        <div className="smartmoney-rows-grid">
                           <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Short % Float</span><span className="smartmoney-panel-row-value value-highlight">{smartMoneyData.short.shortPercentOfFloat != null ? (smartMoneyData.short.shortPercentOfFloat * 100).toFixed(1) + "%" : "—"}</span></div>
                           <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Days to Cover</span><span className="smartmoney-panel-row-value">{smartMoneyData.short.shortRatio?.toFixed(1) ?? "—"}</span></div>
                           <div className="smartmoney-panel-row"><span className="smartmoney-panel-row-label">Shares Short</span><span className="smartmoney-panel-row-value">{smartMoneyData.short.sharesShort ? smartMoneyData.short.sharesShort >= 1e6 ? (smartMoneyData.short.sharesShort / 1e6).toFixed(1) + "M" : (smartMoneyData.short.sharesShort / 1e3).toFixed(0) + "K" : "—"}</span></div>
-                        </>
+                        </div>
                       ) : (
                         <div className="smartmoney-panel-empty">No short interest data</div>
                       )}
