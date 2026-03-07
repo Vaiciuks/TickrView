@@ -279,6 +279,12 @@ textarea {
   background: var(--bg-primary);
 }
 
+/* Hide background content when chart overlay is open to eliminate layout/paint cost */
+.app-body--chart-open {
+  content-visibility: hidden;
+  contain-intrinsic-size: auto 100vh;
+}
+
 /* Header */
 .header {
   position: sticky;
