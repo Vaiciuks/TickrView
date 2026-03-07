@@ -3226,7 +3226,7 @@ export default function ExpandedChart({
               </div>
               <div className="stock-detail-news-list">
                 {newsArticles.map((article, i) => (
-                  <a key={i} className="stock-detail-news-item" href={article.link} target="_blank" rel="noopener noreferrer">
+                  <a key={i} className={`stock-detail-news-item${i === newsArticles.length - 1 && newsArticles.length % 2 === 1 ? " news-item-full" : ""}`} href={article.link} target="_blank" rel="noopener noreferrer">
                     {article.thumbnail && (
                       <div className="stock-detail-news-thumb" style={{ backgroundImage: `url(${article.thumbnail})` }} />
                     )}

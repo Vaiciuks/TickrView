@@ -10711,6 +10711,10 @@ textarea {
   background: var(--hover-overlay);
 }
 
+.stock-detail-news-item.news-item-full {
+  grid-column: 1 / -1;
+}
+
 .stock-detail-news-thumb {
   flex: 0 0 80px;
   height: 56px;
