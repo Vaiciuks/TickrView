@@ -95,22 +95,24 @@ export default function App() {
   }, []);
 
   // All hooks load initial data; only the active tab polls individual quotes
+  // Pause polling when chart overlay is open to avoid cascading re-renders
+  const chartOpen = !!expandedStock;
   const gainersData = useStocks(
     "/api/gainers",
-    activeTab === "gainers" || activeTab === "home",
+    (activeTab === "gainers" || activeTab === "home") && !chartOpen,
   );
   const losersData = useStocks(
     "/api/losers",
-    activeTab === "losers" || activeTab === "home",
+    (activeTab === "losers" || activeTab === "home") && !chartOpen,
   );
   const trendingData = useStocks(
     "/api/trending",
-    activeTab === "trending" || activeTab === "home",
+    (activeTab === "trending" || activeTab === "home") && !chartOpen,
   );
-  const futuresData = useStocks("/api/futures", activeTab === "home");
+  const futuresData = useStocks("/api/futures", activeTab === "home" && !chartOpen);
   const cryptoData = useStocks(
     "/api/crypto",
-    activeTab === "crypto" || activeTab === "home",
+    (activeTab === "crypto" || activeTab === "home") && !chartOpen,
   );
   const tabData = {
     gainers: gainersData,
