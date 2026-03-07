@@ -554,6 +554,7 @@ export default function ExpandedChart({
   const [showStats, setShowStats] = useState(!compact);
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [showFullStats, setShowFullStats] = useState(false);
 
   useEffect(() => {
     if (!showStats || stats) return;
@@ -3064,38 +3065,45 @@ export default function ExpandedChart({
       {/* ── Stock Detail Sections (scrollable below chart) ── */}
       {!compact && (
         <div className="stock-detail-sections">
-          {/* Key Statistics */}
+          {/* Key Statistics (condensed) */}
           <div className="stock-detail-section" id="section-stats">
             <div className="stock-detail-section-header">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
               Key Statistics
+              {stats && (
+                <button className="detail-stats-expand-btn" onClick={() => setShowFullStats(s => !s)} title={showFullStats ? "Show less" : "Show all statistics"}>
+                  {showFullStats ? "Show Less" : "View All"}
+                </button>
+              )}
             </div>
             {statsLoading ? (
               <div className="expanded-stats-loading">Loading statistics...</div>
             ) : stats ? (
               <div className="stock-detail-stats-grid">
-                <div className="detail-stat-row"><span className="detail-stat-label">Open</span><span className="detail-stat-value">{fmtStatPrice(stats.open)}</span></div>
                 <div className="detail-stat-row"><span className="detail-stat-label">Prev Close</span><span className="detail-stat-value">{fmtStatPrice(stats.prevClose)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">High</span><span className="detail-stat-value" style={{color: "var(--green-primary)"}}>{fmtStatPrice(stats.high)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Low</span><span className="detail-stat-value" style={{color: "var(--red-primary)"}}>{fmtStatPrice(stats.low)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Volume</span><span className="detail-stat-value">{fmtStatVol(stats.volume)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Open</span><span className="detail-stat-value">{fmtStatPrice(stats.open)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Day Range</span><span className="detail-stat-value">{fmtStatPrice(stats.low)}<span style={{color: "var(--text-dim)"}}> - </span>{fmtStatPrice(stats.high)}</span></div>
                 <div className="detail-stat-row"><span className="detail-stat-label">Market Cap</span><span className="detail-stat-value">{fmtStatCap(stats.marketCap)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">P/E (TTM)</span><span className="detail-stat-value">{fmtStatNum(stats.peRatio)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">P/E (FWD)</span><span className="detail-stat-value">{fmtStatNum(stats.forwardPE)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">EPS (TTM)</span><span className="detail-stat-value">{fmtStatPrice(stats.eps)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Revenue</span><span className="detail-stat-value">{fmtStatCap(stats.revenue)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Net Income</span><span className="detail-stat-value">{fmtStatCap(stats.netIncome)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">52 Wk High</span><span className="detail-stat-value" style={{color: "var(--green-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekHigh)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">52 Wk Low</span><span className="detail-stat-value" style={{color: "var(--red-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekLow)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Beta</span><span className="detail-stat-value">{fmtStatNum(stats.beta)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Shares Out</span><span className="detail-stat-value">{fmtStatCap(stats.sharesOut)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Dividend</span><span className="detail-stat-value">{stats.dividendRate != null && Number.isFinite(stats.dividendRate) ? `$${stats.dividendRate.toFixed(2)}` : "--"}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Div Yield</span><span className="detail-stat-value">{stats.dividendYield != null && Number.isFinite(stats.dividendYield) ? `${stats.dividendYield.toFixed(2)}%` : "--"}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Analysts</span><span className="detail-stat-value">{stats.analysts || "--"}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Price Target</span><span className="detail-stat-value">{stats.priceTarget && Number.isFinite(stats.priceTarget) ? `$${stats.priceTarget.toFixed(2)}` : "--"}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Earnings Date</span><span className="detail-stat-value">{stats.earningsDate || "--"}</span></div>
-                {stats.sector && <div className="detail-stat-row"><span className="detail-stat-label">Sector</span><span className="detail-stat-value">{stats.sector}</span></div>}
-                {stats.industry && <div className="detail-stat-row"><span className="detail-stat-label">Industry</span><span className="detail-stat-value">{stats.industry}</span></div>}
+                <div className="detail-stat-row"><span className="detail-stat-label">P/E Ratio</span><span className="detail-stat-value">{fmtStatNum(stats.peRatio)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">EPS</span><span className="detail-stat-value">{fmtStatPrice(stats.eps)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Volume</span><span className="detail-stat-value">{fmtStatVol(stats.volume)}</span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">52W Range</span><span className="detail-stat-value"><span style={{color: "var(--red-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekLow)}</span><span style={{color: "var(--text-dim)"}}> - </span><span style={{color: "var(--green-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekHigh)}</span></span></div>
+                <div className="detail-stat-row"><span className="detail-stat-label">Dividend Yield</span><span className="detail-stat-value">{stats.dividendYield != null && Number.isFinite(stats.dividendYield) ? `${stats.dividendYield.toFixed(2)}%` : "—"}</span></div>
+                {showFullStats && (
+                  <>
+                    <div className="detail-stat-row"><span className="detail-stat-label">P/E (FWD)</span><span className="detail-stat-value">{fmtStatNum(stats.forwardPE)}</span></div>
+                    <div className="detail-stat-row"><span className="detail-stat-label">Revenue</span><span className="detail-stat-value">{fmtStatCap(stats.revenue)}</span></div>
+                    <div className="detail-stat-row"><span className="detail-stat-label">Net Income</span><span className="detail-stat-value">{fmtStatCap(stats.netIncome)}</span></div>
+                    <div className="detail-stat-row"><span className="detail-stat-label">Beta</span><span className="detail-stat-value">{fmtStatNum(stats.beta)}</span></div>
+                    <div className="detail-stat-row"><span className="detail-stat-label">Shares Out</span><span className="detail-stat-value">{fmtStatCap(stats.sharesOut)}</span></div>
+                    <div className="detail-stat-row"><span className="detail-stat-label">Dividend</span><span className="detail-stat-value">{stats.dividendRate != null && Number.isFinite(stats.dividendRate) ? `$${stats.dividendRate.toFixed(2)}` : "--"}</span></div>
+                    <div className="detail-stat-row"><span className="detail-stat-label">Analysts</span><span className="detail-stat-value">{stats.analysts || "--"}</span></div>
+                    <div className="detail-stat-row"><span className="detail-stat-label">Price Target</span><span className="detail-stat-value">{stats.priceTarget && Number.isFinite(stats.priceTarget) ? `$${stats.priceTarget.toFixed(2)}` : "--"}</span></div>
+                    <div className="detail-stat-row"><span className="detail-stat-label">Earnings Date</span><span className="detail-stat-value">{stats.earningsDate || "--"}</span></div>
+                    {stats.sector && <div className="detail-stat-row"><span className="detail-stat-label">Sector</span><span className="detail-stat-value">{stats.sector}</span></div>}
+                    {stats.industry && <div className="detail-stat-row"><span className="detail-stat-label">Industry</span><span className="detail-stat-value">{stats.industry}</span></div>}
+                  </>
+                )}
               </div>
             ) : (
               <div className="expanded-stats-loading">No statistics available</div>

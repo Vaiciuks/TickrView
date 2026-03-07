@@ -10571,6 +10571,22 @@ textarea {
   opacity: 0.7;
 }
 
+.detail-stats-expand-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.detail-stats-expand-btn:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-dim);
+}
+
 .stock-detail-stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -10938,6 +10954,10 @@ textarea {
 }
 
 /* Sections */
+.stock-detail-earnings-content {
+  padding: 8px 18px 18px;
+}
+
 .el-section {
   margin-bottom: 28px;
 }
