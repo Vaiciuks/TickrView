@@ -500,8 +500,9 @@ export default function ExpandedChart({
   const desktopAlertBtnRef = useRef(null);
   const mobileAlertBtnRef = useRef(null);
 
-  const [crosshairData, setCrosshairData] = useState(null);
-  const [crosshairPoint, setCrosshairPoint] = useState(null);
+  const crosshairDataRef = useRef(null);
+  const crosshairPointRef = useRef(null);
+  const tooltipRef = useRef(null);
   const [minuteIdx, setMinuteIdx] = useState(() => {
     if (!session) return 0;
     const saved = loadTimeframe(stock.symbol);
@@ -856,40 +857,44 @@ export default function ExpandedChart({
     }
 
     chart.subscribeCrosshairMove((param) => {
+      const tip = tooltipRef.current;
       if (!param || !param.time || !param.seriesData) {
-        setCrosshairData(null);
-        setCrosshairPoint(null);
+        crosshairDataRef.current = null;
+        crosshairPointRef.current = null;
+        if (tip) tip.style.display = "none";
         return;
       }
       if (param.point) {
-        setCrosshairPoint({ x: param.point.x, y: param.point.y });
+        crosshairPointRef.current = { x: param.point.x, y: param.point.y };
       }
       const d = param.seriesData.get(candleSeriesRef.current);
-      // Look up real volume from chart data (histogram values may be capped)
       const cd = chartDataRef.current;
       const match = cd.find((c) => c.time === param.time);
       const realVol = match?.volume || 0;
+      let data = null;
       if (d) {
-        // Line/Area series return { time, value }, OHLC series return { open, high, low, close }
         if (d.open != null) {
-          setCrosshairData({
-            open: d.open,
-            high: d.high,
-            low: d.low,
-            close: d.close,
-            volume: realVol,
-            isUp: d.close >= d.open,
-          });
+          data = { open: d.open, high: d.high, low: d.low, close: d.close, volume: realVol, isUp: d.close >= d.open };
         } else if (d.value != null) {
-          setCrosshairData({
-            open: d.value,
-            high: d.value,
-            low: d.value,
-            close: d.value,
-            volume: realVol,
-            isUp: true,
-          });
+          data = { open: d.value, high: d.value, low: d.value, close: d.value, volume: realVol, isUp: true };
         }
+      }
+      crosshairDataRef.current = data;
+      // Direct DOM update (no React re-render)
+      if (tip && data && crosshairPointRef.current) {
+        const containerW = mainContainerRef.current?.clientWidth || 600;
+        tip.style.display = "block";
+        tip.style.left = Math.min(crosshairPointRef.current.x + 16, containerW - 200) + "px";
+        tip.style.top = Math.max(crosshairPointRef.current.y - 80, 8) + "px";
+        const cls = data.isUp ? "val-up" : "val-down";
+        const vals = tip.querySelectorAll("[data-tt]");
+        if (vals[0]) { vals[0].textContent = Number.isFinite(data.open) ? data.open.toFixed(2) : "--"; vals[0].className = "floating-tooltip-value " + cls; }
+        if (vals[1]) { vals[1].textContent = Number.isFinite(data.high) ? data.high.toFixed(2) : "--"; vals[1].className = "floating-tooltip-value " + cls; }
+        if (vals[2]) { vals[2].textContent = Number.isFinite(data.low) ? data.low.toFixed(2) : "--"; vals[2].className = "floating-tooltip-value " + cls; }
+        if (vals[3]) { vals[3].textContent = Number.isFinite(data.close) ? data.close.toFixed(2) : "--"; vals[3].className = "floating-tooltip-value " + cls; }
+        if (vals[4]) { vals[4].textContent = formatVolume(data.volume); }
+      } else if (tip) {
+        tip.style.display = "none";
       }
     });
 
@@ -2963,55 +2968,32 @@ export default function ExpandedChart({
           {!loading && (!data || data.length === 0) && (
             <div className="chart-loading">No chart data available</div>
           )}
-          {!compact && crosshairData && crosshairPoint && (
+          {!compact && (
             <div
+              ref={tooltipRef}
               className="floating-tooltip"
-              style={{
-                left: Math.min(
-                  crosshairPoint.x + 16,
-                  (mainContainerRef.current?.clientWidth || 600) - 200,
-                ),
-                top: Math.max(crosshairPoint.y - 80, 8),
-              }}
+              style={{ display: "none" }}
             >
               <div className="floating-tooltip-row">
                 <span className="floating-tooltip-label">O</span>
-                <span
-                  className={`floating-tooltip-value ${crosshairData.isUp ? "val-up" : "val-down"}`}
-                >
-                  {Number.isFinite(crosshairData.open) ? crosshairData.open.toFixed(2) : "--"}
-                </span>
+                <span data-tt="o" className="floating-tooltip-value">--</span>
               </div>
               <div className="floating-tooltip-row">
                 <span className="floating-tooltip-label">H</span>
-                <span
-                  className={`floating-tooltip-value ${crosshairData.isUp ? "val-up" : "val-down"}`}
-                >
-                  {Number.isFinite(crosshairData.high) ? crosshairData.high.toFixed(2) : "--"}
-                </span>
+                <span data-tt="h" className="floating-tooltip-value">--</span>
               </div>
               <div className="floating-tooltip-row">
                 <span className="floating-tooltip-label">L</span>
-                <span
-                  className={`floating-tooltip-value ${crosshairData.isUp ? "val-up" : "val-down"}`}
-                >
-                  {Number.isFinite(crosshairData.low) ? crosshairData.low.toFixed(2) : "--"}
-                </span>
+                <span data-tt="l" className="floating-tooltip-value">--</span>
               </div>
               <div className="floating-tooltip-row">
                 <span className="floating-tooltip-label">C</span>
-                <span
-                  className={`floating-tooltip-value ${crosshairData.isUp ? "val-up" : "val-down"}`}
-                >
-                  {Number.isFinite(crosshairData.close) ? crosshairData.close.toFixed(2) : "--"}
-                </span>
+                <span data-tt="c" className="floating-tooltip-value">--</span>
               </div>
               <div className="floating-tooltip-divider" />
               <div className="floating-tooltip-row">
                 <span className="floating-tooltip-label">Vol</span>
-                <span className="floating-tooltip-value">
-                  {formatVolume(crosshairData.volume)}
-                </span>
+                <span data-tt="v" className="floating-tooltip-value">--</span>
               </div>
             </div>
           )}
