@@ -619,6 +619,20 @@ export default function ExpandedChart({
   // Earnings data (auto-load for full view)
   const { data: earningsData, loading: earningsLoading } = useEarningsLookup(!compact ? stock.symbol : null);
 
+  // Memoized earnings computations (avoid recalculating on every render)
+  const earningsComputed = useMemo(() => {
+    if (!earningsData) return null;
+    const epsChart = earningsData.epsHistory?.filter(q => q.actual != null).slice(-12) || [];
+    const epsMax = epsChart.length > 0 ? Math.max(...epsChart.flatMap(q => [Math.abs(q.actual ?? 0), Math.abs(q.estimate ?? 0)]), 0.01) : 1;
+    const revChart = earningsData.revenueHistory?.filter(q => q.revenueActual != null).slice(-12) || [];
+    const revMax = revChart.length > 0 ? Math.max(...revChart.flatMap(q => [q.revenueActual ?? 0, q.revenueEstimate ?? 0]), 1) : 1;
+    const revHasEstimates = revChart.some(q => q.revenueEstimate != null);
+    const rec = earningsData.recommendation;
+    const recTotal = rec ? rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell : 0;
+    const surpriseData = earningsData.epsHistory ? [...earningsData.epsHistory].filter(q => q.actual != null).reverse().slice(0, 8) : [];
+    return { epsChart, epsMax, revChart, revMax, revHasEstimates, rec, recTotal, surpriseData };
+  }, [earningsData]);
+
   // Drawing tools state
   const [drawMode, setDrawMode] = useState("none");
   const [drawings, setDrawings] = useState([]);
@@ -3170,173 +3184,147 @@ export default function ExpandedChart({
                 )}
 
                 {/* EPS History Chart */}
-                {(() => {
-                  const epsChart = earningsData.epsHistory?.filter(q => q.actual != null).slice(-12) || [];
-                  const epsMax = epsChart.length > 0 ? Math.max(...epsChart.flatMap(q => [Math.abs(q.actual ?? 0), Math.abs(q.estimate ?? 0)]), 0.01) : 1;
-                  if (!epsChart.length) return null;
-                  return (
-                    <div className="el-section">
-                      <h3 className="el-section-title">EPS History (Actual vs Estimate)</h3>
-                      <div className="el-bar-chart">
-                        {epsChart.map((q, i) => {
-                          const estH = q.estimate != null ? (Math.abs(q.estimate) / epsMax) * 100 : 0;
-                          const actH = q.actual != null ? (Math.abs(q.actual) / epsMax) * 100 : 0;
-                          const isBeat = q.beat === true;
-                          const isMiss = q.beat === false;
-                          const label = q.quarter && q.year ? `Q${q.quarter} '${String(q.year).slice(2)}` : q.period || "?";
-                          return (
-                            <div key={i} className="el-bar-group">
-                              <div className="el-bar-values">
-                                {q.actual != null && (
-                                  <span className={`el-bar-val ${isBeat ? "beat" : isMiss ? "miss" : ""}`}>
-                                    {q.actual >= 0 ? `$${q.actual.toFixed(2)}` : `-$${Math.abs(q.actual).toFixed(2)}`}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="el-bars">
-                                {q.estimate != null && <div className="el-bar estimate" style={{ height: `${Math.max(estH, 4)}%` }} title={`Est: $${q.estimate?.toFixed(2)}`} />}
-                                {q.actual != null && <div className={`el-bar actual ${isBeat ? "beat" : isMiss ? "miss" : ""}`} style={{ height: `${Math.max(actH, 4)}%` }} title={`Act: $${q.actual?.toFixed(2)}`} />}
-                              </div>
-                              <span className="el-bar-label">{label}</span>
-                              {isBeat && <span className="el-beat-indicator">&#10003;</span>}
-                              {isMiss && <span className="el-miss-indicator">&#10007;</span>}
+                {earningsComputed?.epsChart.length > 0 && (
+                  <div className="el-section">
+                    <h3 className="el-section-title">EPS History (Actual vs Estimate)</h3>
+                    <div className="el-bar-chart">
+                      {earningsComputed.epsChart.map((q, i) => {
+                        const estH = q.estimate != null ? (Math.abs(q.estimate) / earningsComputed.epsMax) * 100 : 0;
+                        const actH = q.actual != null ? (Math.abs(q.actual) / earningsComputed.epsMax) * 100 : 0;
+                        const isBeat = q.beat === true;
+                        const isMiss = q.beat === false;
+                        const label = q.quarter && q.year ? `Q${q.quarter} '${String(q.year).slice(2)}` : q.period || "?";
+                        return (
+                          <div key={i} className="el-bar-group">
+                            <div className="el-bar-values">
+                              {q.actual != null && (
+                                <span className={`el-bar-val ${isBeat ? "beat" : isMiss ? "miss" : ""}`}>
+                                  {q.actual >= 0 ? `$${q.actual.toFixed(2)}` : `-$${Math.abs(q.actual).toFixed(2)}`}
+                                </span>
+                              )}
                             </div>
-                          );
-                        })}
-                      </div>
-                      <div className="el-chart-legend">
-                        <span className="el-legend-item"><span className="el-legend-dot estimate" /> Estimate</span>
-                        <span className="el-legend-item"><span className="el-legend-dot actual" /> Actual</span>
-                      </div>
+                            <div className="el-bars">
+                              {q.estimate != null && <div className="el-bar estimate" style={{ height: `${Math.max(estH, 4)}%` }} title={`Est: $${q.estimate?.toFixed(2)}`} />}
+                              {q.actual != null && <div className={`el-bar actual ${isBeat ? "beat" : isMiss ? "miss" : ""}`} style={{ height: `${Math.max(actH, 4)}%` }} title={`Act: $${q.actual?.toFixed(2)}`} />}
+                            </div>
+                            <span className="el-bar-label">{label}</span>
+                            {isBeat && <span className="el-beat-indicator">&#10003;</span>}
+                            {isMiss && <span className="el-miss-indicator">&#10007;</span>}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })()}
+                    <div className="el-chart-legend">
+                      <span className="el-legend-item"><span className="el-legend-dot estimate" /> Estimate</span>
+                      <span className="el-legend-item"><span className="el-legend-dot actual" /> Actual</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Revenue History Chart */}
-                {(() => {
-                  const revChart = earningsData.revenueHistory?.filter(q => q.revenueActual != null).slice(-12) || [];
-                  const revMax = revChart.length > 0 ? Math.max(...revChart.flatMap(q => [q.revenueActual ?? 0, q.revenueEstimate ?? 0]), 1) : 1;
-                  const revHasEstimates = revChart.some(q => q.revenueEstimate != null);
-                  if (!revChart.length) return null;
-                  const fmtRev = (val) => {
-                    if (val == null) return "--";
-                    if (Math.abs(val) >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
-                    if (Math.abs(val) >= 1e6) return `$${(val / 1e6).toFixed(0)}M`;
-                    return `$${val.toLocaleString()}`;
-                  };
-                  return (
-                    <div className="el-section">
-                      <h3 className="el-section-title">Revenue History{revHasEstimates ? " (Actual vs Estimate)" : ""}</h3>
-                      <div className="el-bar-chart">
-                        {revChart.map((q, i) => {
-                          const estH = q.revenueEstimate != null ? (q.revenueEstimate / revMax) * 100 : 0;
-                          const actH = q.revenueActual != null ? (q.revenueActual / revMax) * 100 : 0;
-                          const isBeat = q.beat === true;
-                          const isMiss = q.beat === false;
-                          const label = q.quarter && q.year ? `Q${q.quarter} '${String(q.year).slice(2)}` : q.date || "?";
-                          return (
-                            <div key={i} className="el-bar-group">
-                              <div className="el-bar-values">
-                                {q.revenueActual != null && (
-                                  <span className={`el-bar-val ${isBeat ? "beat" : isMiss ? "miss" : ""}`}>{fmtRev(q.revenueActual)}</span>
-                                )}
-                              </div>
-                              <div className="el-bars">
-                                {q.revenueEstimate != null && <div className="el-bar estimate" style={{ height: `${Math.max(estH, 4)}%` }} title={`Est: ${fmtRev(q.revenueEstimate)}`} />}
-                                {q.revenueActual != null && <div className={`el-bar actual ${isBeat ? "beat" : isMiss ? "miss" : ""}`} style={{ height: `${Math.max(actH, 4)}%` }} title={`Act: ${fmtRev(q.revenueActual)}`} />}
-                              </div>
-                              <span className="el-bar-label">{label}</span>
-                              {isBeat && <span className="el-beat-indicator">&#10003;</span>}
-                              {isMiss && <span className="el-miss-indicator">&#10007;</span>}
+                {earningsComputed?.revChart.length > 0 && (
+                  <div className="el-section">
+                    <h3 className="el-section-title">Revenue History{earningsComputed.revHasEstimates ? " (Actual vs Estimate)" : ""}</h3>
+                    <div className="el-bar-chart">
+                      {earningsComputed.revChart.map((q, i) => {
+                        const estH = q.revenueEstimate != null ? (q.revenueEstimate / earningsComputed.revMax) * 100 : 0;
+                        const actH = q.revenueActual != null ? (q.revenueActual / earningsComputed.revMax) * 100 : 0;
+                        const isBeat = q.beat === true;
+                        const isMiss = q.beat === false;
+                        const label = q.quarter && q.year ? `Q${q.quarter} '${String(q.year).slice(2)}` : q.date || "?";
+                        return (
+                          <div key={i} className="el-bar-group">
+                            <div className="el-bar-values">
+                              {q.revenueActual != null && (
+                                <span className={`el-bar-val ${isBeat ? "beat" : isMiss ? "miss" : ""}`}>{fmtStatCap(q.revenueActual)}</span>
+                              )}
                             </div>
-                          );
-                        })}
-                      </div>
-                      <div className="el-chart-legend">
-                        {revHasEstimates && <span className="el-legend-item"><span className="el-legend-dot estimate" /> Estimate</span>}
-                        <span className="el-legend-item"><span className="el-legend-dot actual" /> Actual</span>
-                      </div>
+                            <div className="el-bars">
+                              {q.revenueEstimate != null && <div className="el-bar estimate" style={{ height: `${Math.max(estH, 4)}%` }} title={`Est: ${fmtStatCap(q.revenueEstimate)}`} />}
+                              {q.revenueActual != null && <div className={`el-bar actual ${isBeat ? "beat" : isMiss ? "miss" : ""}`} style={{ height: `${Math.max(actH, 4)}%` }} title={`Act: ${fmtStatCap(q.revenueActual)}`} />}
+                            </div>
+                            <span className="el-bar-label">{label}</span>
+                            {isBeat && <span className="el-beat-indicator">&#10003;</span>}
+                            {isMiss && <span className="el-miss-indicator">&#10007;</span>}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })()}
+                    <div className="el-chart-legend">
+                      {earningsComputed.revHasEstimates && <span className="el-legend-item"><span className="el-legend-dot estimate" /> Estimate</span>}
+                      <span className="el-legend-item"><span className="el-legend-dot actual" /> Actual</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Analyst Consensus */}
-                {(() => {
-                  const rec = earningsData.recommendation;
-                  const recTotal = rec ? rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell : 0;
-                  if (!rec || !recTotal) return null;
-                  return (
-                    <div className="el-section">
-                      <h3 className="el-section-title">Analyst Consensus</h3>
-                      <div className="el-consensus">
-                        <div className="el-consensus-bar">
-                          {rec.strongBuy > 0 && <div className="el-con-seg strong-buy" style={{ flex: rec.strongBuy }} title={`Strong Buy: ${rec.strongBuy}`}>{rec.strongBuy}</div>}
-                          {rec.buy > 0 && <div className="el-con-seg buy" style={{ flex: rec.buy }} title={`Buy: ${rec.buy}`}>{rec.buy}</div>}
-                          {rec.hold > 0 && <div className="el-con-seg hold" style={{ flex: rec.hold }} title={`Hold: ${rec.hold}`}>{rec.hold}</div>}
-                          {rec.sell > 0 && <div className="el-con-seg sell" style={{ flex: rec.sell }} title={`Sell: ${rec.sell}`}>{rec.sell}</div>}
-                          {rec.strongSell > 0 && <div className="el-con-seg strong-sell" style={{ flex: rec.strongSell }} title={`Strong Sell: ${rec.strongSell}`}>{rec.strongSell}</div>}
-                        </div>
-                        <div className="el-consensus-labels">
-                          <span className="el-con-label strong-buy">Strong Buy</span>
-                          <span className="el-con-label buy">Buy</span>
-                          <span className="el-con-label hold">Hold</span>
-                          <span className="el-con-label sell">Sell</span>
-                          <span className="el-con-label strong-sell">Strong Sell</span>
-                        </div>
-                        <div className="el-consensus-total">{recTotal} analysts · {rec.period}</div>
+                {earningsComputed?.rec && earningsComputed.recTotal > 0 && (
+                  <div className="el-section">
+                    <h3 className="el-section-title">Analyst Consensus</h3>
+                    <div className="el-consensus">
+                      <div className="el-consensus-bar">
+                        {earningsComputed.rec.strongBuy > 0 && <div className="el-con-seg strong-buy" style={{ flex: earningsComputed.rec.strongBuy }} title={`Strong Buy: ${earningsComputed.rec.strongBuy}`}>{earningsComputed.rec.strongBuy}</div>}
+                        {earningsComputed.rec.buy > 0 && <div className="el-con-seg buy" style={{ flex: earningsComputed.rec.buy }} title={`Buy: ${earningsComputed.rec.buy}`}>{earningsComputed.rec.buy}</div>}
+                        {earningsComputed.rec.hold > 0 && <div className="el-con-seg hold" style={{ flex: earningsComputed.rec.hold }} title={`Hold: ${earningsComputed.rec.hold}`}>{earningsComputed.rec.hold}</div>}
+                        {earningsComputed.rec.sell > 0 && <div className="el-con-seg sell" style={{ flex: earningsComputed.rec.sell }} title={`Sell: ${earningsComputed.rec.sell}`}>{earningsComputed.rec.sell}</div>}
+                        {earningsComputed.rec.strongSell > 0 && <div className="el-con-seg strong-sell" style={{ flex: earningsComputed.rec.strongSell }} title={`Strong Sell: ${earningsComputed.rec.strongSell}`}>{earningsComputed.rec.strongSell}</div>}
                       </div>
+                      <div className="el-consensus-labels">
+                        <span className="el-con-label strong-buy">Strong Buy</span>
+                        <span className="el-con-label buy">Buy</span>
+                        <span className="el-con-label hold">Hold</span>
+                        <span className="el-con-label sell">Sell</span>
+                        <span className="el-con-label strong-sell">Strong Sell</span>
+                      </div>
+                      <div className="el-consensus-total">{earningsComputed.recTotal} analysts · {earningsComputed.rec.period}</div>
                     </div>
-                  );
-                })()}
+                  </div>
+                )}
 
                 {/* Surprise History Table */}
-                {(() => {
-                  const surpriseData = earningsData.epsHistory ? [...earningsData.epsHistory].filter(q => q.actual != null).reverse().slice(0, 8) : [];
-                  if (!surpriseData.length) return null;
-                  return (
-                    <div className="el-section">
-                      <h3 className="el-section-title">Earnings Surprise History</h3>
-                      <div className="smartmoney-table-wrap">
-                        <table className="smartmoney-table">
-                          <thead>
-                            <tr>
-                              <th>Quarter</th>
-                              <th>EPS Est.</th>
-                              <th>EPS Act.</th>
-                              <th>Surprise</th>
-                              <th>Result</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {surpriseData.map((q, i) => {
-                              const label = q.quarter && q.year ? `Q${q.quarter} '${String(q.year).slice(2)}` : q.period || "?";
-                              return (
-                                <tr key={i}>
-                                  <td>{label}</td>
-                                  <td>{q.estimate != null ? `$${q.estimate.toFixed(2)}` : "--"}</td>
-                                  <td className={q.beat === true ? "el-beat-text" : q.beat === false ? "el-miss-text" : ""}>
-                                    {q.actual != null ? `$${q.actual.toFixed(2)}` : "--"}
-                                  </td>
-                                  <td className={q.surprisePercent != null ? (q.surprisePercent >= 0 ? "el-beat-text" : "el-miss-text") : ""}>
-                                    {q.surprisePercent != null ? `${q.surprisePercent >= 0 ? "+" : ""}${q.surprisePercent.toFixed(2)}%` : "--"}
-                                  </td>
-                                  <td>
-                                    {q.beat === true && <span className="sentiment-badge bullish">BEAT</span>}
-                                    {q.beat === false && <span className="sentiment-badge bearish">MISS</span>}
-                                    {q.beat == null && <span className="sentiment-badge">--</span>}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                {earningsComputed?.surpriseData.length > 0 && (
+                  <div className="el-section">
+                    <h3 className="el-section-title">Earnings Surprise History</h3>
+                    <div className="smartmoney-table-wrap">
+                      <table className="smartmoney-table">
+                        <thead>
+                          <tr>
+                            <th>Quarter</th>
+                            <th>EPS Est.</th>
+                            <th>EPS Act.</th>
+                            <th>Surprise</th>
+                            <th>Result</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {earningsComputed.surpriseData.map((q, i) => {
+                            const label = q.quarter && q.year ? `Q${q.quarter} '${String(q.year).slice(2)}` : q.period || "?";
+                            return (
+                              <tr key={i}>
+                                <td>{label}</td>
+                                <td>{q.estimate != null ? `$${q.estimate.toFixed(2)}` : "--"}</td>
+                                <td className={q.beat === true ? "el-beat-text" : q.beat === false ? "el-miss-text" : ""}>
+                                  {q.actual != null ? `$${q.actual.toFixed(2)}` : "--"}
+                                </td>
+                                <td className={q.surprisePercent != null ? (q.surprisePercent >= 0 ? "el-beat-text" : "el-miss-text") : ""}>
+                                  {q.surprisePercent != null ? `${q.surprisePercent >= 0 ? "+" : ""}${q.surprisePercent.toFixed(2)}%` : "--"}
+                                </td>
+                                <td>
+                                  {q.beat === true && <span className="sentiment-badge bullish">BEAT</span>}
+                                  {q.beat === false && <span className="sentiment-badge bearish">MISS</span>}
+                                  {q.beat == null && <span className="sentiment-badge">--</span>}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
-                  );
-                })()}
+                  </div>
+                )}
 
                 {/* No data fallback */}
-                {!earningsData.epsHistory?.length && !earningsData.revenueHistory?.length && !earningsData.recommendation && (
+                {earningsComputed && !earningsComputed.epsChart.length && !earningsComputed.revChart.length && !earningsComputed.rec && (
                   <div className="smartmoney-panel-empty" style={{ padding: "18px" }}>No earnings data available for {stock.symbol}</div>
                 )}
               </div>

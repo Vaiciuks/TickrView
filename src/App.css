@@ -2135,6 +2135,7 @@ textarea {
   min-height: 400px;
   max-height: 800px;
   overflow: hidden;
+  contain: layout style;
 }
 
 .chart-toolbar {
@@ -10547,6 +10548,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  contain: content;
 }
 
 .stock-detail-section {
