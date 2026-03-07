@@ -6474,7 +6474,19 @@ textarea {
   }
 
   .chart-search-wrapper {
-    display: none;
+    width: 100%;
+    order: 10;
+  }
+  .chart-search-form {
+    width: 100%;
+  }
+  .chart-search-input {
+    width: 100%;
+  }
+  .chart-search-suggestions {
+    width: 100%;
+    right: auto;
+    left: 0;
   }
 
   .chart-tools-extra {
