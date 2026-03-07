@@ -10759,24 +10759,24 @@ textarea {
 
 /* Options/Short rows use 2-col grid to fill width */
 .stock-detail-section .smartmoney-section-body .smartmoney-panel-row {
-  padding: 5px 0;
+  padding: 6px 0;
 }
 .smartmoney-rows-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0 24px;
+  gap: 0 32px;
 }
 /* Insider trades in 2-col grid */
 .smartmoney-trades-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px 24px;
+  gap: 2px 32px;
 }
 .smartmoney-trades-grid .smartmoney-panel-trade {
-  border-bottom: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 6px 0;
+  border-radius: 0;
+  background: none;
 }
 
 @media (max-width: 768px) {
