@@ -10742,9 +10742,10 @@ textarea {
   color: var(--text-dim);
 }
 
-/* Smart money sections inside detail page — wider layout */
+/* Smart money sections inside detail page — condensed layout */
 .stock-detail-section .smartmoney-panel-content {
   padding: 0;
+  max-width: 520px;
 }
 
 .stock-detail-section .smartmoney-section-body {
@@ -10753,6 +10754,7 @@ textarea {
 
 .stock-detail-section .smartmoney-section-header {
   padding: 12px 18px;
+  max-width: 520px;
 }
 
 @media (max-width: 768px) {
