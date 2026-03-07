@@ -10795,12 +10795,56 @@ textarea {
   }
 
   .stock-detail-news-list {
-    grid-template-columns: 1fr;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+    padding: 12px 14px;
+    scrollbar-width: none;
+  }
+  .stock-detail-news-list::-webkit-scrollbar {
+    display: none;
   }
 
-  .stock-detail-news-thumb {
-    flex: 0 0 56px;
-    height: 42px;
+  .stock-detail-news-item {
+    flex: 0 0 200px;
+    flex-direction: column;
+    scroll-snap-align: start;
+    padding: 0;
+    border-bottom: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    overflow: hidden;
+    gap: 0;
+  }
+  .stock-detail-news-item.news-item-full {
+    grid-column: unset;
+  }
+
+  .stock-detail-news-item .stock-detail-news-thumb {
+    flex: none;
+    width: 100%;
+    height: 110px;
+    border-radius: 0;
+  }
+
+  .stock-detail-news-item .stock-detail-news-text {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .stock-detail-news-item .stock-detail-news-headline {
+    font-size: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .stock-detail-news-item .stock-detail-news-meta {
+    font-size: 10px;
   }
 
   .smartmoney-rows-grid,
