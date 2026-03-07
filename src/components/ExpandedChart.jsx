@@ -470,6 +470,7 @@ export default function ExpandedChart({
   theme,
   note,
   onSetNote,
+  onSearch,
 }) {
   const { session } = useAuth();
   const mainContainerRef = useRef(null);
@@ -530,6 +531,15 @@ export default function ExpandedChart({
   const panelRef = useRef(null);
   const [showNews, setShowNews] = useState(false);
   const hasNews = newsArticles.length > 0;
+
+  // Inline search state
+  const [chartSearchQuery, setChartSearchQuery] = useState("");
+  const [chartSearchSuggestions, setChartSearchSuggestions] = useState([]);
+  const [chartSearchShow, setChartSearchShow] = useState(false);
+  const [chartSearchIdx, setChartSearchIdx] = useState(-1);
+  const chartSearchRef = useRef(null);
+  const chartSearchDebounce = useRef(null);
+  const chartSearchAbort = useRef(null);
   const effectiveIndicators = compact
     ? { ema: false, vwap: false, rsi: false, macd: false }
     : indicators;
@@ -2110,6 +2120,73 @@ export default function ExpandedChart({
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose, minuteTfs.length]);
 
+  // ── Inline chart search ──
+  useEffect(() => {
+    if (chartSearchDebounce.current) clearTimeout(chartSearchDebounce.current);
+    if (chartSearchQuery.trim().length === 0) {
+      if (chartSearchAbort.current) chartSearchAbort.current.abort();
+      setChartSearchSuggestions([]);
+      setChartSearchShow(false);
+      return;
+    }
+    chartSearchDebounce.current = setTimeout(async () => {
+      if (chartSearchAbort.current) chartSearchAbort.current.abort();
+      const controller = new AbortController();
+      chartSearchAbort.current = controller;
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(chartSearchQuery.trim())}`, { signal: controller.signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!controller.signal.aborted) {
+          setChartSearchSuggestions(data.results);
+          setChartSearchShow(data.results.length > 0);
+          setChartSearchIdx(-1);
+        }
+      } catch { /* ignore */ }
+    }, 150);
+    return () => clearTimeout(chartSearchDebounce.current);
+  }, [chartSearchQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (chartSearchRef.current && !chartSearchRef.current.contains(e.target)) {
+        setChartSearchShow(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const chartSearchSelect = useCallback((symbol) => {
+    setChartSearchQuery("");
+    setChartSearchSuggestions([]);
+    setChartSearchShow(false);
+    if (onSearch) onSearch(symbol);
+  }, [onSearch]);
+
+  const chartSearchSubmit = useCallback((e) => {
+    e.preventDefault();
+    if (chartSearchIdx >= 0 && chartSearchSuggestions[chartSearchIdx]) {
+      chartSearchSelect(chartSearchSuggestions[chartSearchIdx].symbol);
+    } else {
+      const sym = chartSearchQuery.trim().toUpperCase();
+      if (sym) chartSearchSelect(sym);
+    }
+  }, [chartSearchIdx, chartSearchSuggestions, chartSearchQuery, chartSearchSelect]);
+
+  const chartSearchKeyDown = useCallback((e) => {
+    if (!chartSearchShow || chartSearchSuggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setChartSearchIdx(i => (i < chartSearchSuggestions.length - 1 ? i + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setChartSearchIdx(i => (i > 0 ? i - 1 : chartSearchSuggestions.length - 1));
+    } else if (e.key === "Escape") {
+      setChartSearchShow(false);
+    }
+  }, [chartSearchShow, chartSearchSuggestions.length]);
+
   const subChartCount =
     (effectiveIndicators.rsi ? 1 : 0) + (effectiveIndicators.macd ? 1 : 0);
   const mainFlex = subChartCount === 0 ? 1 : subChartCount === 1 ? 0.7 : 0.55;
@@ -2403,6 +2480,40 @@ export default function ExpandedChart({
           )}
           <StaleDataBadge lastUpdated={chartLastUpdated} error={chartError} />
         </div>
+        {!compact && onSearch && (
+          <div className="chart-search-wrapper" ref={chartSearchRef}>
+            <form className="chart-search-form" onSubmit={chartSearchSubmit}>
+              <svg className="chart-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                className="chart-search-input"
+                type="text"
+                placeholder="Search symbol..."
+                value={chartSearchQuery}
+                onChange={(e) => setChartSearchQuery(e.target.value)}
+                onFocus={() => chartSearchSuggestions.length > 0 && setChartSearchShow(true)}
+                onKeyDown={chartSearchKeyDown}
+                spellCheck={false}
+                autoComplete="off"
+              />
+            </form>
+            {chartSearchShow && (
+              <ul className="chart-search-suggestions">
+                {chartSearchSuggestions.map((item, i) => (
+                  <li
+                    key={item.symbol}
+                    className={`search-suggestion${i === chartSearchIdx ? " search-suggestion-active" : ""}`}
+                    onMouseDown={() => chartSearchSelect(item.symbol)}
+                    onMouseEnter={() => setChartSearchIdx(i)}
+                  >
+                    <span className="suggestion-symbol">{item.symbol}</span>
+                    <span className="suggestion-name">{item.name}</span>
+                    {item.exchange && <span className="suggestion-exchange">{item.exchange}</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         <button className="expanded-close" onClick={onClose} aria-label="Close">
           <svg
             width="14"

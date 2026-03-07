@@ -652,6 +652,7 @@ export default function App() {
             theme={theme}
             note={getStockNote(expandedStock.symbol)}
             onSetNote={(text) => setStockNote(expandedStock.symbol, text)}
+            onSearch={handleSearch}
           />
         </Suspense>
       )}

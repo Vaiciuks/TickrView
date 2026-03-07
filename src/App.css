@@ -2112,6 +2112,58 @@ textarea {
   color: var(--red-primary);
 }
 
+/* Chart inline search */
+.chart-search-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+.chart-search-form {
+  display: flex;
+  align-items: center;
+  background: var(--bg-card, #13131e);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0 10px;
+  gap: 6px;
+  transition: border-color var(--transition-fast);
+}
+.chart-search-form:focus-within {
+  border-color: var(--accent-primary, #6c63ff);
+}
+.chart-search-icon {
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+.chart-search-input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 140px;
+  padding: 6px 0;
+  font-family: inherit;
+}
+.chart-search-input::placeholder {
+  color: var(--text-dim);
+}
+.chart-search-suggestions {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 280px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-card, #13131e);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  margin-top: 4px;
+  padding: 4px 0;
+  z-index: 100;
+  list-style: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
 .expanded-close {
   background: none;
   border: 1px solid var(--glass-border);
@@ -6418,6 +6470,10 @@ textarea {
   }
 
   .expanded-header-actions-secondary {
+    display: none;
+  }
+
+  .chart-search-wrapper {
     display: none;
   }
 
