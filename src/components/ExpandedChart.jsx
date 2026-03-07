@@ -3061,68 +3061,76 @@ export default function ExpandedChart({
       {/* ── Stock Detail Sections (scrollable below chart) ── */}
       {!compact && (
         <div className="stock-detail-sections">
-          {/* Key Statistics (condensed) */}
-          <div className="stock-detail-section" id="section-stats">
-            <div className="stock-detail-section-header">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-              Key Statistics
-              {stats && (
-                <button className="detail-stats-expand-btn" onClick={() => setShowFullStats(s => !s)} title={showFullStats ? "Show less" : "Show all statistics"}>
-                  {showFullStats ? "Show Less" : "View All"}
-                </button>
-              )}
-            </div>
-            {statsLoading ? (
-              <div className="expanded-stats-loading">Loading statistics...</div>
-            ) : stats ? (
-              <div className="stock-detail-stats-grid">
-                <div className="detail-stat-row"><span className="detail-stat-label">Prev Close</span><span className="detail-stat-value">{fmtStatPrice(stats.prevClose)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Open</span><span className="detail-stat-value">{fmtStatPrice(stats.open)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Day Range</span><span className="detail-stat-value">{fmtStatPrice(stats.low)}<span style={{color: "var(--text-dim)"}}> - </span>{fmtStatPrice(stats.high)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Market Cap</span><span className="detail-stat-value">{fmtStatCap(stats.marketCap)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">P/E Ratio</span><span className="detail-stat-value">{fmtStatNum(stats.peRatio)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">EPS</span><span className="detail-stat-value">{fmtStatPrice(stats.eps)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Volume</span><span className="detail-stat-value">{fmtStatVol(stats.volume)}</span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">52W Range</span><span className="detail-stat-value"><span style={{color: "var(--red-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekLow)}</span><span style={{color: "var(--text-dim)"}}> - </span><span style={{color: "var(--green-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekHigh)}</span></span></div>
-                <div className="detail-stat-row"><span className="detail-stat-label">Dividend Yield</span><span className="detail-stat-value">{stats.dividendYield != null && Number.isFinite(stats.dividendYield) ? `${stats.dividendYield.toFixed(2)}%` : "—"}</span></div>
-                {showFullStats && (
-                  <>
-                    <div className="detail-stat-row"><span className="detail-stat-label">P/E (FWD)</span><span className="detail-stat-value">{fmtStatNum(stats.forwardPE)}</span></div>
-                    <div className="detail-stat-row"><span className="detail-stat-label">Revenue</span><span className="detail-stat-value">{fmtStatCap(stats.revenue)}</span></div>
-                    <div className="detail-stat-row"><span className="detail-stat-label">Net Income</span><span className="detail-stat-value">{fmtStatCap(stats.netIncome)}</span></div>
-                    <div className="detail-stat-row"><span className="detail-stat-label">Beta</span><span className="detail-stat-value">{fmtStatNum(stats.beta)}</span></div>
-                    <div className="detail-stat-row"><span className="detail-stat-label">Shares Out</span><span className="detail-stat-value">{fmtStatCap(stats.sharesOut)}</span></div>
-                    <div className="detail-stat-row"><span className="detail-stat-label">Dividend</span><span className="detail-stat-value">{stats.dividendRate != null && Number.isFinite(stats.dividendRate) ? `$${stats.dividendRate.toFixed(2)}` : "--"}</span></div>
-                    <div className="detail-stat-row"><span className="detail-stat-label">Analysts</span><span className="detail-stat-value">{stats.analysts || "--"}</span></div>
-                    <div className="detail-stat-row"><span className="detail-stat-label">Price Target</span><span className="detail-stat-value">{stats.priceTarget && Number.isFinite(stats.priceTarget) ? `$${stats.priceTarget.toFixed(2)}` : "--"}</span></div>
-                    <div className="detail-stat-row"><span className="detail-stat-label">Earnings Date</span><span className="detail-stat-value">{stats.earningsDate || "--"}</span></div>
-                    {stats.sector && <div className="detail-stat-row"><span className="detail-stat-label">Sector</span><span className="detail-stat-value">{stats.sector}</span></div>}
-                    {stats.industry && <div className="detail-stat-row"><span className="detail-stat-label">Industry</span><span className="detail-stat-value">{stats.industry}</span></div>}
-                  </>
+          {/* Top row: Stats + News side by side on desktop */}
+          <div className="stock-detail-top-row">
+            {/* Key Statistics (condensed) */}
+            <div className="stock-detail-section" id="section-stats">
+              <div className="stock-detail-section-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                Key Statistics
+                {stats && (
+                  <button className="detail-stats-expand-btn" onClick={() => setShowFullStats(s => !s)} title={showFullStats ? "Show less" : "Show all statistics"}>
+                    {showFullStats ? "Show Less" : "View All"}
+                  </button>
                 )}
               </div>
-            ) : (
-              <div className="expanded-stats-loading">No statistics available</div>
+              {statsLoading ? (
+                <div className="expanded-stats-loading">Loading statistics...</div>
+              ) : stats ? (
+                <div className="stock-detail-stats-grid">
+                  <div className="detail-stat-row"><span className="detail-stat-label">Prev Close</span><span className="detail-stat-value">{fmtStatPrice(stats.prevClose)}</span></div>
+                  <div className="detail-stat-row"><span className="detail-stat-label">Open</span><span className="detail-stat-value">{fmtStatPrice(stats.open)}</span></div>
+                  <div className="detail-stat-row"><span className="detail-stat-label">Day Range</span><span className="detail-stat-value">{fmtStatPrice(stats.low)}<span style={{color: "var(--text-dim)"}}> - </span>{fmtStatPrice(stats.high)}</span></div>
+                  <div className="detail-stat-row"><span className="detail-stat-label">Market Cap</span><span className="detail-stat-value">{fmtStatCap(stats.marketCap)}</span></div>
+                  <div className="detail-stat-row"><span className="detail-stat-label">P/E Ratio</span><span className="detail-stat-value">{fmtStatNum(stats.peRatio)}</span></div>
+                  <div className="detail-stat-row"><span className="detail-stat-label">EPS</span><span className="detail-stat-value">{fmtStatPrice(stats.eps)}</span></div>
+                  <div className="detail-stat-row"><span className="detail-stat-label">Volume</span><span className="detail-stat-value">{fmtStatVol(stats.volume)}</span></div>
+                  <div className="detail-stat-row"><span className="detail-stat-label">52W Range</span><span className="detail-stat-value"><span style={{color: "var(--red-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekLow)}</span><span style={{color: "var(--text-dim)"}}> - </span><span style={{color: "var(--green-primary)"}}>{fmtStatPrice(stats.fiftyTwoWeekHigh)}</span></span></div>
+                  <div className="detail-stat-row"><span className="detail-stat-label">Dividend Yield</span><span className="detail-stat-value">{stats.dividendYield != null && Number.isFinite(stats.dividendYield) ? `${stats.dividendYield.toFixed(2)}%` : "—"}</span></div>
+                  {showFullStats && (
+                    <>
+                      <div className="detail-stat-row"><span className="detail-stat-label">P/E (FWD)</span><span className="detail-stat-value">{fmtStatNum(stats.forwardPE)}</span></div>
+                      <div className="detail-stat-row"><span className="detail-stat-label">Revenue</span><span className="detail-stat-value">{fmtStatCap(stats.revenue)}</span></div>
+                      <div className="detail-stat-row"><span className="detail-stat-label">Net Income</span><span className="detail-stat-value">{fmtStatCap(stats.netIncome)}</span></div>
+                      <div className="detail-stat-row"><span className="detail-stat-label">Beta</span><span className="detail-stat-value">{fmtStatNum(stats.beta)}</span></div>
+                      <div className="detail-stat-row"><span className="detail-stat-label">Shares Out</span><span className="detail-stat-value">{fmtStatCap(stats.sharesOut)}</span></div>
+                      <div className="detail-stat-row"><span className="detail-stat-label">Dividend</span><span className="detail-stat-value">{stats.dividendRate != null && Number.isFinite(stats.dividendRate) ? `$${stats.dividendRate.toFixed(2)}` : "--"}</span></div>
+                      <div className="detail-stat-row"><span className="detail-stat-label">Analysts</span><span className="detail-stat-value">{stats.analysts || "--"}</span></div>
+                      <div className="detail-stat-row"><span className="detail-stat-label">Price Target</span><span className="detail-stat-value">{stats.priceTarget && Number.isFinite(stats.priceTarget) ? `$${stats.priceTarget.toFixed(2)}` : "--"}</span></div>
+                      <div className="detail-stat-row"><span className="detail-stat-label">Earnings Date</span><span className="detail-stat-value">{stats.earningsDate || "--"}</span></div>
+                      {stats.sector && <div className="detail-stat-row"><span className="detail-stat-label">Sector</span><span className="detail-stat-value">{stats.sector}</span></div>}
+                      {stats.industry && <div className="detail-stat-row"><span className="detail-stat-label">Industry</span><span className="detail-stat-value">{stats.industry}</span></div>}
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="expanded-stats-loading">No statistics available</div>
+              )}
+            </div>
+
+            {/* News — side panel on desktop, stacked on mobile */}
+            {newsArticles.length > 0 && (
+              <div className="stock-detail-section stock-detail-news-panel" id="section-news">
+                <div className="stock-detail-section-header">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+                  News — {stock.symbol}
+                </div>
+                <div className="stock-detail-news-list">
+                  {newsArticles.map((article, i) => (
+                    <a key={i} className="stock-detail-news-item" href={article.link} target="_blank" rel="noopener noreferrer">
+                      {article.thumbnail && (
+                        <div className="stock-detail-news-thumb" style={{ backgroundImage: `url(${article.thumbnail})` }} />
+                      )}
+                      <div className="stock-detail-news-text">
+                        <span className="stock-detail-news-headline">{article.title}</span>
+                        <span className="stock-detail-news-meta">{article.publisher} &middot; {timeAgo(article.publishedAt)}</span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-
-          {/* News */}
-          {newsArticles.length > 0 && (
-            <div className="stock-detail-section" id="section-news">
-              <div className="stock-detail-section-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-                News — {stock.symbol}
-              </div>
-              <div className="stock-detail-news-list">
-                {newsArticles.map((article, i) => (
-                  <a key={i} className="stock-detail-news-item" href={article.link} target="_blank" rel="noopener noreferrer">
-                    <span className="stock-detail-news-headline">{article.title}</span>
-                    <span className="stock-detail-news-meta">{article.publisher} &middot; {timeAgo(article.publishedAt)}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Earnings */}
           <div className="stock-detail-section" id="section-earnings">
