@@ -1006,18 +1006,18 @@ function FearGreedGauge({ active, futures }) {
   const innerR = 36;
   const hubR = 28;
 
-  // Needle angle: score 0 → angle 0 (right/fear), score 100 → angle π (left/greed)
-  const needleAngle = (score / 100) * Math.PI;
+  // Needle angle: score 0 → angle π (left/fear), score 100 → angle 0 (right/greed)
+  const needleAngle = Math.PI - (score / 100) * Math.PI;
 
-  // 7 wedge segments from left (greed) to right (fear)
+  // 7 wedge segments from left (fear) to right (greed)
   const segColors = [
-    { base: "#00c853", light: "#69f0ae", dark: "#00701a" },
-    { base: "#43a047", light: "#76d275", dark: "#1b5e20" },
-    { base: "#7cb342", light: "#aee571", dark: "#4b830d" },
-    { base: "#fdd835", light: "#ffff6b", dark: "#c6a700" },
-    { base: "#ffb300", light: "#ffe54c", dark: "#c68400" },
-    { base: "#f4511e", light: "#ff8a50", dark: "#b91400" },
     { base: "#c62828", light: "#ff5f52", dark: "#8e0000" },
+    { base: "#f4511e", light: "#ff8a50", dark: "#b91400" },
+    { base: "#ffb300", light: "#ffe54c", dark: "#c68400" },
+    { base: "#fdd835", light: "#ffff6b", dark: "#c6a700" },
+    { base: "#7cb342", light: "#aee571", dark: "#4b830d" },
+    { base: "#43a047", light: "#76d275", dark: "#1b5e20" },
+    { base: "#00c853", light: "#69f0ae", dark: "#00701a" },
   ];
   const segCount = segColors.length;
   const gapAngle = 0.03;
@@ -1061,7 +1061,7 @@ function FearGreedGauge({ active, futures }) {
   // Which segment is the needle in?
   const activeSegIdx = Math.min(
     segCount - 1,
-    Math.floor((1 - score / 100) * segCount),
+    Math.floor((score / 100) * segCount),
   );
 
   return (
@@ -1215,7 +1215,7 @@ function FearGreedGauge({ active, futures }) {
             {score}
           </text>
 
-          {/* GREED / FEAR labels */}
+          {/* FEAR / GREED labels */}
           <text
             x={22}
             y={cy + 10}
@@ -1225,7 +1225,7 @@ function FearGreedGauge({ active, futures }) {
             fontWeight="700"
             letterSpacing="0.08em"
           >
-            GREED
+            FEAR
           </text>
           <text
             x={178}
@@ -1236,20 +1236,36 @@ function FearGreedGauge({ active, futures }) {
             fontWeight="700"
             letterSpacing="0.08em"
           >
-            FEAR
+            GREED
           </text>
+          {/* 0 / 100 markers */}
+          <text x={18} y={cy + 20} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="7" fontWeight="600" fontFamily="var(--font-mono)">0</text>
+          <text x={182} y={cy + 20} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="7" fontWeight="600" fontFamily="var(--font-mono)">100</text>
+          <text x={cx} y={14} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="7" fontWeight="600" fontFamily="var(--font-mono)">50</text>
 
-          {/* Label below hub */}
+          {/* Sentiment label below hub */}
           <text
             x={cx}
-            y={cy + hubR + 14}
+            y={cy + hubR + 12}
             textAnchor="middle"
-            fill="rgba(255,255,255,0.5)"
-            fontSize="8"
-            fontWeight="600"
-            letterSpacing="0.1em"
+            fill={color}
+            fontSize="7.5"
+            fontWeight="700"
+            letterSpacing="0.08em"
           >
             {label.toUpperCase()}
+          </text>
+          {/* Index title */}
+          <text
+            x={cx}
+            y={cy + hubR + 22}
+            textAnchor="middle"
+            fill="rgba(255,255,255,0.3)"
+            fontSize="6"
+            fontWeight="500"
+            letterSpacing="0.06em"
+          >
+            Fear &amp; Greed Index
           </text>
         </svg>
       </div>
