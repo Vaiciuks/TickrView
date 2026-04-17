@@ -19,6 +19,8 @@ import Home from "./components/Home.jsx";
 import Footer from "./components/Footer.jsx";
 import ParticleBackground from "./components/ParticleBackground.jsx";
 import TabErrorBoundary from "./components/TabErrorBoundary.jsx";
+import CommandPalette from "./components/CommandPalette.jsx";
+import TickerHoverLayer from "./components/TickerHoverLayer.jsx";
 import { usePortfolio } from "./hooks/usePortfolio.js";
 
 // Lazy-loaded tab components — each gets its own chunk
@@ -63,6 +65,8 @@ export default function App() {
   const [focusedIdx, setFocusedIdx] = useState(-1);
   const skipPushRef = useRef(false);
   const isMobile = useMediaQuery("(max-width: 1024px)");
+
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("stock-scanner-sidebar");
@@ -408,6 +412,18 @@ export default function App() {
     setFocusedIdx(-1);
   }, [activeTab]);
 
+  // Global ⌘K / Ctrl-K opens the command palette — works from any focus state
+  useEffect(() => {
+    const handle = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        setPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handle);
+    return () => window.removeEventListener("keydown", handle);
+  }, []);
+
   // Keyboard shortcuts: J/K/Enter/F/Esc/?
   useEffect(() => {
     const handleKey = (e) => {
@@ -686,6 +702,24 @@ export default function App() {
           {gridStocks.length} charts selected
         </button>
       )}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        tabs={TABS}
+        favorites={favorites}
+        recentStocks={recentStocks}
+        onNavigate={changeTab}
+        onOpenStock={(stock) => handleStockClick(stock)}
+        onSearchSymbol={handleSearch}
+        onToggleFavorite={toggleFavorite}
+        onToggleTheme={toggleTheme}
+        onToggleSidebar={toggleSidebar}
+      />
+      <TickerHoverLayer
+        isFavorite={isFavorite}
+        onToggleFavorite={toggleFavorite}
+        onOpenStock={handleSearch}
+      />
     </div>
   );
 }

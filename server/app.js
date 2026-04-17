@@ -32,11 +32,18 @@ import lobbyingRouter from './routes/lobbying.js';
 import darkPoolRouter from './routes/darkPool.js';
 import wsbRouter from './routes/wsb.js';
 import sitemapRouter from './routes/sitemap.js';
+import streamRouter from './routes/stream.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
-app.use(compression());
+// Skip compression on SSE — gzip buffers events and kills streaming
+app.use(compression({
+  filter: (req, res) => {
+    if (res.getHeader('Content-Type')?.toString().includes('text/event-stream')) return false;
+    return compression.filter(req, res);
+  },
+}));
 app.use(express.json());
 
 app.use('/api/user', userRouter);
@@ -70,6 +77,7 @@ app.use('/api/gov-contracts', govContractsRouter);
 app.use('/api/lobbying', lobbyingRouter);
 app.use('/api/dark-pool', darkPoolRouter);
 app.use('/api/wsb', wsbRouter);
+app.use('/api/stream', streamRouter);
 app.use('/sitemap.xml', sitemapRouter);
 
 // Diagnostic endpoint — tests Yahoo connectivity from server

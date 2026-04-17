@@ -914,6 +914,7 @@ export default function Portfolio({
                 <tr
                   key={h.symbol}
                   className="pf-row"
+                  data-ticker={h.symbol}
                   onClick={() => handleRowClick(h)}
                 >
                   <td className="pf-td pf-td-symbol">
@@ -1127,6 +1128,7 @@ export default function Portfolio({
             <div
               key={h.symbol}
               className="pf-card"
+              data-ticker={h.symbol}
               onClick={() => handleRowClick(h)}
             >
               <div className="pf-card-top">

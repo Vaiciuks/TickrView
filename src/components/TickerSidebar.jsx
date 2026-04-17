@@ -131,6 +131,7 @@ function TickerRow({
     <div
       ref={rowRef}
       className={`ticker-row ${flash || ""}`}
+      data-ticker={stock.symbol}
       data-drag-index={draggable ? index : undefined}
       onClick={(e) => onClick(e)}
       onMouseDown={handleMouseDown}

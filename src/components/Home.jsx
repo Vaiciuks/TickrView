@@ -430,7 +430,10 @@ function StockRow({ stock, rank }) {
   const animatedPercent = useAnimatedNumber(stock.changePercent);
   const isPos = animatedPercent >= 0;
   return (
-    <div className={`home-stock-row ${flash || ""}`}>
+    <div
+      className={`home-stock-row ${flash || ""}`}
+      data-ticker={stock.symbol}
+    >
       {rank != null && <span className="home-stock-rank">{rank}</span>}
       <StockLogo symbol={stock.symbol} size={18} />
       <span className="home-stock-symbol">{stock.symbol}</span>
@@ -1474,7 +1477,10 @@ function MoverRow({ stock, isGainer }) {
   const flash = usePriceFlash(stock.change);
   const animatedChange = useAnimatedNumber(stock.change);
   return (
-    <div className={`home-movers-row ${flash || ""}`}>
+    <div
+      className={`home-movers-row ${flash || ""}`}
+      data-ticker={stock.symbol}
+    >
       <StockLogo symbol={stock.symbol} size={16} />
       <span className="home-stock-symbol">{stock.symbol}</span>
       <span

@@ -14,8 +14,10 @@ import {
 import { RoundedCandleSeries } from "../utils/roundedCandles.js";
 import StockLogo from "./StockLogo.jsx";
 import StaleDataBadge from "./StaleDataBadge.jsx";
+import EarningsPlayback from "./EarningsPlayback.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { useEarningsLookup } from "../hooks/useEarningsLookup.js";
+import { useLiveQuote } from "../hooks/useLiveQuote.js";
 
 // Yahoo Finance caps intraday data at ~60 days for 5m/15m/30m and ~730 days for 1h.
 // Requesting a range beyond these limits causes Yahoo to silently return daily candles.
@@ -681,17 +683,37 @@ export default function ExpandedChart({
   );
   const showSessions = isIntraday && !isCrypto;
 
-  // Derive live price from latest candle
+  // Live SSE quote for the active symbol — pushes every ~3s from server.
+  // Takes over from candle-derived price as soon as the first frame arrives.
+  const { quote: liveQuote, connected: liveConnected } = useLiveQuote(
+    stock.symbol,
+    !compact,          // only stream for the full-screen chart, not grid cells
+  );
+
+  // Derive live price: prefer SSE quote, else fall back to latest candle, else
+  // the initial quote passed via props.
   const previousClose =
-    stock.change != null ? stock.price - stock.change : null;
+    liveQuote?.change != null
+      ? liveQuote.price - liveQuote.change
+      : stock.change != null
+        ? stock.price - stock.change
+        : null;
+  const candleLast =
+    data && data.length > 0 ? data[data.length - 1].close : null;
   const livePrice =
-    data && data.length > 0 ? data[data.length - 1].close : stock.price;
+    liveQuote?.price ?? candleLast ?? stock.price;
   const liveChange =
-    previousClose != null ? livePrice - previousClose : stock.change;
+    liveQuote?.change != null
+      ? liveQuote.change
+      : previousClose != null
+        ? livePrice - previousClose
+        : stock.change;
   const liveChangePercent =
-    previousClose != null && previousClose !== 0
-      ? (liveChange / previousClose) * 100
-      : stock.changePercent;
+    liveQuote?.changePercent != null
+      ? liveQuote.changePercent
+      : previousClose != null && previousClose !== 0
+        ? (liveChange / previousClose) * 100
+        : stock.changePercent;
   const isPositive = liveChangePercent >= 0;
   const animatedPrice = useAnimatedNumber(livePrice);
   const animatedPercent = useAnimatedNumber(liveChangePercent);
@@ -2479,6 +2501,16 @@ export default function ExpandedChart({
             </span>
           )}
           <StaleDataBadge lastUpdated={chartLastUpdated} error={chartError} />
+          {liveConnected && (
+            <span
+              className="live-dot"
+              title="Live quote stream active"
+              aria-label="Live quote stream active"
+            >
+              <span className="live-dot-pulse" />
+              LIVE
+            </span>
+          )}
         </div>
         {!compact && onSearch && (
           <div className="chart-search-wrapper" ref={chartSearchRef}>
@@ -3419,6 +3451,14 @@ export default function ExpandedChart({
                       </table>
                     </div>
                   </div>
+                )}
+
+                {/* Post-earnings reaction playback */}
+                {earningsComputed?.surpriseData?.length > 0 && (
+                  <EarningsPlayback
+                    symbol={stock.symbol}
+                    earningsRows={earningsComputed.surpriseData}
+                  />
                 )}
 
                 {/* No data fallback */}
