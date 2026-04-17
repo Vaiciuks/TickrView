@@ -7,23 +7,16 @@ function formatLabel(q) {
 }
 
 function Bar({ value, maxAbs }) {
-  if (value == null || maxAbs === 0) {
+  if (value == null || !Number.isFinite(value) || maxAbs === 0) {
     return <div className="ep-bar-spacer" />;
   }
-  // Bars are anchored to a centre line so positive bars grow up,
-  // negative bars grow down — like a bloomberg reaction chart.
-  const pct = Math.min(Math.abs(value) / maxAbs, 1) * 100;
+  // Bars anchor at the centre axis and grow in one direction only, so they
+  // can only occupy up to 50% of the wrapper's height. Scale accordingly.
+  const halfPct = Math.min(Math.abs(value) / maxAbs, 1) * 50;
   const isUp = value >= 0;
   return (
     <div className={`ep-bar-wrap ${isUp ? "ep-bar-up" : "ep-bar-down"}`}>
-      {isUp ? (
-        <div className="ep-bar" style={{ height: `${pct}%` }} />
-      ) : (
-        <div
-          className="ep-bar"
-          style={{ height: `${pct}%`, top: "50%" }}
-        />
-      )}
+      <div className="ep-bar" style={{ height: `${halfPct}%` }} />
     </div>
   );
 }
@@ -92,7 +85,6 @@ export default function EarningsPlayback({ symbol, earningsRows }) {
       </div>
 
       <div className="ep-chart">
-        <div className="ep-axis-line" aria-hidden="true" />
         {computed.slice.map((q, i) => (
           <div key={i} className="ep-quarter">
             <div className="ep-bars-pair">

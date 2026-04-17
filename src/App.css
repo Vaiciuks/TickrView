@@ -11969,24 +11969,15 @@ textarea {
 }
 
 .ep-chart {
-  position: relative;
   display: flex;
   align-items: stretch;
   gap: var(--space-2);
-  height: 180px;
   padding: 0 var(--space-1);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .ep-axis-line {
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 50%;
-  height: 1px;
-  background: var(--border-default);
-  pointer-events: none;
-  z-index: 0;
+  display: none; /* Deprecated — axis now drawn per bar-pair for perfect alignment */
 }
 
 .ep-quarter {
@@ -11995,30 +11986,42 @@ textarea {
   flex-direction: column;
   align-items: center;
   min-width: 0;
-  position: relative;
-  gap: 4px;
+  gap: 6px;
 }
 
+/* Fixed-height bars area so the axis centre is predictable and bars
+   can never escape the container. Max bar = 50% of this height = 60px. */
 .ep-bars-pair {
-  flex: 1;
+  position: relative;
   width: 100%;
+  height: 120px;
   display: flex;
   align-items: stretch;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
+}
+
+/* Zero-axis line drawn per quarter so all cells are perfectly aligned */
+.ep-bars-pair::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--border-default);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ep-bar-wrap {
+  flex: 0 0 16px;
   position: relative;
   z-index: 1;
 }
 
-.ep-bar-wrap {
-  flex: 1;
-  position: relative;
-  max-width: 18px;
-}
-
 .ep-bar-spacer {
-  flex: 1;
-  max-width: 18px;
+  flex: 0 0 16px;
 }
 
 .ep-bar {
@@ -12029,7 +12032,7 @@ textarea {
   transition: height var(--dur-med) var(--ease-standard);
 }
 
-/* Up bars grow upward from the centre */
+/* Up bars grow upward from the centre (height is already capped at 50%) */
 .ep-bar-up .ep-bar {
   bottom: 50%;
   background: linear-gradient(
@@ -12051,7 +12054,7 @@ textarea {
   box-shadow: 0 0 12px rgba(255, 84, 112, 0.18);
 }
 
-/* First bar (D+1) slightly more saturated, second (5D) muted — legend matches */
+/* Second bar (5D) muted so the pair reads clearly */
 .ep-bar-wrap:nth-child(2) .ep-bar {
   opacity: 0.6;
 }
@@ -12060,11 +12063,12 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
+  min-height: 28px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums slashed-zero;
   font-size: 10px;
-  line-height: 1.1;
+  line-height: 1.2;
 }
 
 .ep-bar-val {
@@ -12072,7 +12076,7 @@ textarea {
 }
 
 .ep-bar-val-small {
-  opacity: 0.65;
+  opacity: 0.7;
   font-size: 9px;
 }
 
@@ -12082,6 +12086,17 @@ textarea {
   font-weight: var(--fw-medium);
   color: var(--text-tertiary);
   letter-spacing: var(--tracking-snug);
+  white-space: nowrap;
+}
+
+/* Scoped beat/miss indicators — reset the global absolutely-positioned ones
+   that the rest of the earnings section uses, so ours flow inline. */
+.ep-quarter .el-beat-indicator,
+.ep-quarter .el-miss-indicator {
+  position: static;
+  font-size: 10px;
+  line-height: 1;
+  margin: 0;
 }
 
 .ep-legend-swatch {
@@ -12091,21 +12106,21 @@ textarea {
   border-radius: 2px;
   margin-right: 5px;
   vertical-align: -1px;
+  background: var(--text-tertiary);
 }
 
 .ep-legend-d1 {
-  background: var(--green-primary);
-  box-shadow: 0 0 4px rgba(38, 217, 122, 0.3);
+  background: var(--text-secondary);
 }
 
 .ep-legend-5d {
-  background: var(--green-primary);
-  opacity: 0.6;
+  background: var(--text-secondary);
+  opacity: 0.5;
 }
 
 @media (max-width: 768px) {
-  .ep-chart {
-    height: 150px;
+  .ep-bars-pair {
+    height: 96px;
   }
   .ep-averages {
     gap: var(--space-5);
@@ -12116,6 +12131,10 @@ textarea {
   }
   .ep-bar-val-small {
     display: none;
+  }
+  .ep-bar-wrap,
+  .ep-bar-spacer {
+    flex-basis: 12px;
   }
 }
 
