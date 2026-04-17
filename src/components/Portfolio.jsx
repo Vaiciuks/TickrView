@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { createChart, ColorType, CrosshairMode } from "lightweight-charts";
+import {
+  createChart,
+  ColorType,
+  CrosshairMode,
+  LineStyle,
+} from "lightweight-charts";
 import { formatPrice } from "../utils/formatters.js";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { useScrollLock } from "../hooks/useScrollLock.js";
@@ -8,22 +13,34 @@ import { useAnimatedNumber } from "../hooks/useAnimatedNumber.js";
 import StockLogo from "./StockLogo.jsx";
 
 const ALLOCATION_COLORS = [
-  "#00c853",
-  "#00bcd4",
-  "#7c4dff",
-  "#ff9100",
-  "#ff1744",
-  "#448aff",
+  "#26d97a",
+  "#2dd4ff",
+  "#b98aff",
+  "#ffbf47",
+  "#ff5470",
+  "#5b9dff",
   "#ffd600",
-  "#00e676",
+  "#4aeb92",
   "#d500f9",
-  "#ff6d00",
+  "#ff9100",
   "#18ffff",
-  "#76ff03",
-  "#f50057",
+  "#8cff3a",
+  "#ff4d9d",
   "#40c4ff",
   "#ffab40",
 ];
+
+const TIMEFRAMES = ["1D", "1W", "1M", "3M", "YTD", "1Y", "All"];
+
+const PERIOD_LABELS = {
+  "1D": "Today",
+  "1W": "Past Week",
+  "1M": "Past Month",
+  "3M": "Past 3 Months",
+  YTD: "Year to Date",
+  "1Y": "Past Year",
+  All: "All Time",
+};
 
 function hideWatermark(container) {
   requestAnimationFrame(() => {
@@ -207,6 +224,37 @@ export default function Portfolio({
   const animDayChangePercent = useAnimatedNumber(dayChangePercent ?? 0);
   const animExtDollar = useAnimatedNumber(extInfo?.extDollarChange ?? 0);
   const animExtPct = useAnimatedNumber(extInfo?.extPctChange ?? 0);
+
+  // Baseline (first data point of the selected timeframe) — used for the
+  // dotted reference line on the chart and for the period change calculation.
+  const baseline = chartData.length > 0 ? chartData[0].value : null;
+
+  // The value we're showing above the chart: hover point if user is scrubbing,
+  // else the current (live) total value.
+  const displayValue =
+    hoverValue != null ? hoverValue : (totalValue ?? null);
+
+  // Period change ($ and %) — uses parent-supplied day values when 1D,
+  // otherwise computes vs the period baseline (so hover works too).
+  const periodChange = useMemo(() => {
+    if (chartTimeframe === "1D") {
+      if (hoverValue != null && baseline != null) {
+        const d = hoverValue - baseline;
+        const p = baseline > 0 ? (d / baseline) * 100 : 0;
+        return { dollar: d, percent: p };
+      }
+      return { dollar: dayChange ?? 0, percent: dayChangePercent ?? 0 };
+    }
+    if (baseline == null || displayValue == null) return null;
+    const d = displayValue - baseline;
+    const p = baseline > 0 ? (d / baseline) * 100 : 0;
+    return { dollar: d, percent: p };
+  }, [chartTimeframe, hoverValue, baseline, displayValue, dayChange, dayChangePercent]);
+
+  const periodLabel = PERIOD_LABELS[chartTimeframe] || "";
+  const heroUp = periodChange ? periodChange.dollar >= 0 : true;
+  const animPeriodDollar = useAnimatedNumber(periodChange?.dollar ?? 0);
+  const animPeriodPercent = useAnimatedNumber(periodChange?.percent ?? 0);
 
   // Flash on total value change
   useEffect(() => {
@@ -454,13 +502,13 @@ export default function Portfolio({
     const firstVal = chartData[0].value;
     const lastVal = chartData[chartData.length - 1].value;
     const isGain = lastVal >= firstVal;
-    const lineColor = isGain ? "#00d66b" : "#ff2952";
+    const lineColor = isGain ? "#26d97a" : "#ff5470";
     const topColor = isGain
-      ? "rgba(0, 214, 107, 0.18)"
-      : "rgba(255, 41, 82, 0.18)";
+      ? "rgba(38, 217, 122, 0.18)"
+      : "rgba(255, 84, 112, 0.18)";
     const bottomColor = isGain
-      ? "rgba(0, 214, 107, 0.01)"
-      : "rgba(255, 41, 82, 0.01)";
+      ? "rgba(38, 217, 122, 0.01)"
+      : "rgba(255, 84, 112, 0.01)";
 
     const series = chart.addAreaSeries({
       lineColor,
@@ -476,6 +524,19 @@ export default function Portfolio({
     });
 
     series.setData(chartData);
+
+    // Dotted reference baseline (Robinhood-style): a subtle horizontal
+    // line marking the start of the selected period so P/L is visible.
+    const isDark =
+      document.documentElement.getAttribute("data-theme") !== "light";
+    series.createPriceLine({
+      price: firstVal,
+      color: isDark ? "rgba(230, 232, 245, 0.22)" : "rgba(17, 19, 38, 0.22)",
+      lineWidth: 1,
+      lineStyle: LineStyle.Dotted,
+      axisLabelVisible: false,
+    });
+
     chart.timeScale().fitContent();
     hideWatermark(container);
 
@@ -508,104 +569,117 @@ export default function Portfolio({
 
   return (
     <main className="portfolio-main">
-      <div className="pf-header">
-        <h2 className="pf-title">Portfolio</h2>
-      </div>
-
-      {/* Summary bar */}
-      <div className="pf-summary-bar">
-        <div className={`pf-stat-card ${flash || ""}`}>
-          <span className="pf-stat-label">Total Value</span>
-          <span className={`pf-stat-value ${flash || ""}`}>
-            {totalValue != null
-              ? `$${animTotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              : "—"}
-          </span>
+      {/* Robinhood-style hero: label, big value, change-over-period */}
+      <section className={`pf-hero ${heroUp ? "pf-hero--up" : "pf-hero--down"}`}>
+        <div className="pf-hero-label">Portfolio</div>
+        <div className={`pf-hero-value ${hoverValue == null && flash ? flash : ""}`}>
+          {displayValue != null
+            ? `$${(hoverValue != null ? hoverValue : animTotalValue).toLocaleString(
+                undefined,
+                { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+              )}`
+            : "—"}
         </div>
-        <div className="pf-stat-card">
-          <span className="pf-stat-label">Cost Basis</span>
-          <span className="pf-stat-value">{`$${animTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-        </div>
-        <div className="pf-stat-card">
-          <span className="pf-stat-label">Total P&L</span>
-          <span
-            className={`pf-stat-value ${totalPL != null ? (totalPL >= 0 ? "pf-up" : "pf-down") : ""}`}
-          >
-            {fmtDollar(animTotalPL)}{" "}
-            {totalPLPercent != null && (
-              <span className="pf-stat-pct">
-                ({fmtPercent(animTotalPLPercent)})
-              </span>
-            )}
-          </span>
-        </div>
-        <div className="pf-stat-card">
-          <span className="pf-stat-label">
-            {extInfo
-              ? extInfo.state === "pre" ? "Pre-Market" : "After Hours"
-              : "Day Change"}
-          </span>
-          <span
-            className={`pf-stat-value ${
-              extInfo
-                ? (extInfo.extDollarChange >= 0 ? "pf-up" : "pf-down")
-                : dayChange !== 0 ? (dayChange >= 0 ? "pf-up" : "pf-down") : ""
-            }`}
-          >
-            {extInfo
-              ? fmtDollar(animExtDollar)
-              : fmtDollar(animDayChange)}{" "}
-            <span className="pf-stat-pct">
-              ({extInfo
-                ? fmtPercent(animExtPct)
-                : fmtPercent(animDayChangePercent)})
+        {periodChange != null && displayValue != null && (
+          <div className={`pf-hero-change ${heroUp ? "pf-up" : "pf-down"}`}>
+            <span className="pf-hero-arrow" aria-hidden="true">
+              {heroUp ? "▲" : "▼"}
             </span>
-          </span>
-        </div>
-      </div>
+            <span className="pf-hero-dollar">
+              {fmtDollar(animPeriodDollar)}
+            </span>
+            <span className="pf-hero-percent">
+              ({fmtPercent(animPeriodPercent)})
+            </span>
+            <span className="pf-hero-period">{periodLabel}</span>
+          </div>
+        )}
+        {extInfo && chartTimeframe === "1D" && hoverValue == null && (
+          <div
+            className={`pf-hero-ext ${extInfo.extDollarChange >= 0 ? "pf-up" : "pf-down"}`}
+          >
+            <span className="pf-hero-ext-label">
+              {extInfo.state === "pre" ? "Pre-Market" : "After Hours"}
+            </span>
+            {fmtDollar(animExtDollar)} ({fmtPercent(animExtPct)})
+          </div>
+        )}
+      </section>
 
       {/* Portfolio performance chart */}
       {holdings.length > 0 && (
         <div className="pf-chart-section">
-          <div className="pf-chart-header">
-            <div className={`pf-chart-value ${hoverValue == null && flash ? flash : ""}`}>
-              {(hoverValue != null ? hoverValue : totalValue) != null
-                ? `$${(hoverValue != null ? hoverValue : animTotalValue).toLocaleString(
-                    undefined,
-                    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
-                  )}`
-                : "—"}
-            </div>
-            {extInfo && (
-              <div
-                className="pf-chart-changes"
-                style={{ visibility: hoverValue != null ? "hidden" : "visible" }}
-              >
-                <span
-                  className={`pf-chart-ext-change ${extInfo.extDollarChange >= 0 ? "pf-up" : "pf-down"}`}
-                >
-                  {extInfo.state === "pre" ? "Pre-Market" : "After Hours"}{" "}
-                  {fmtDollar(animExtDollar)} ({fmtPercent(animExtPct)})
-                </span>
-              </div>
-            )}
-          </div>
           <div className="pf-chart-container" ref={chartContainerRef}>
             {chartLoading && chartData.length === 0 && (
               <div className="pf-chart-loading">Loading chart...</div>
             )}
           </div>
-          <div className="pf-chart-timeframes">
-            {["1D", "1W", "1M", "YTD", "All"].map((tf) => (
+          <div className="pf-chart-timeframes" role="tablist">
+            {TIMEFRAMES.map((tf) => (
               <button
                 key={tf}
+                role="tab"
+                aria-selected={chartTimeframe === tf}
                 className={`pf-tf-btn ${chartTimeframe === tf ? "pf-tf-active" : ""}`}
                 onClick={() => setChartTimeframe(tf)}
               >
-                {tf}
+                {tf === "All" ? "ALL" : tf}
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Compact metric strip: cost basis / total return / day change */}
+      {holdings.length > 0 && (
+        <div className="pf-metrics">
+          <div className="pf-metric">
+            <span className="pf-metric-label">Cost Basis</span>
+            <span className="pf-metric-value">
+              {`$${animTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            </span>
+          </div>
+          <div className="pf-metric">
+            <span className="pf-metric-label">Total Return</span>
+            <span
+              className={`pf-metric-value ${totalPL != null ? (totalPL >= 0 ? "pf-up" : "pf-down") : ""}`}
+            >
+              {fmtDollar(animTotalPL)}
+              {totalPLPercent != null && (
+                <span className="pf-metric-pct">
+                  {" "}({fmtPercent(animTotalPLPercent)})
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="pf-metric">
+            <span className="pf-metric-label">Today</span>
+            <span
+              className={`pf-metric-value ${dayChange != null ? (dayChange >= 0 ? "pf-up" : "pf-down") : ""}`}
+            >
+              {fmtDollar(animDayChange)}
+              {dayChangePercent != null && (
+                <span className="pf-metric-pct">
+                  {" "}({fmtPercent(animDayChangePercent)})
+                </span>
+              )}
+            </span>
+          </div>
+          {extInfo && (
+            <div className="pf-metric">
+              <span className="pf-metric-label">
+                {extInfo.state === "pre" ? "Pre-Market" : "After Hours"}
+              </span>
+              <span
+                className={`pf-metric-value ${extInfo.extDollarChange >= 0 ? "pf-up" : "pf-down"}`}
+              >
+                {fmtDollar(animExtDollar)}
+                <span className="pf-metric-pct">
+                  {" "}({fmtPercent(animExtPct)})
+                </span>
+              </span>
+            </div>
+          )}
         </div>
       )}
 

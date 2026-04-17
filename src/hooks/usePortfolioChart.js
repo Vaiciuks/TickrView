@@ -4,7 +4,9 @@ const TIMEFRAME_MAP = {
   "1D": { range: "2d", interval: "5m" },
   "1W": { range: "5d", interval: "15m" },
   "1M": { range: "1mo", interval: "1h" },
+  "3M": { range: "3mo", interval: "1d" },
   "YTD": { range: "ytd", interval: "1d" },
+  "1Y": { range: "1y", interval: "1d" },
   All: { range: "max", interval: "1wk" },
 };
 
