@@ -119,6 +119,13 @@ export default function TickerHoverLayer() {
   // Global pointer delegation
   useEffect(() => {
     const onOver = (e) => {
+      // Bail if the pointer is inside a nested popover (e.g. the news list inside
+      // a sidebar ticker row) — the hover card would obscure the popover content.
+      // Also close any currently-open card so it doesn't linger over the popover.
+      if (e.target.closest?.(".news-popover, .expanded-news-panel")) {
+        if (activeSymbolRef.current || openTimerRef.current) closeNow();
+        return;
+      }
       const target = e.target.closest?.("[data-ticker]");
       if (!target) return;
       // Bail if currently inside a chart overlay or the palette — avoid noise
