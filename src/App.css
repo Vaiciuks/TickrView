@@ -1754,6 +1754,17 @@ textarea {
   opacity: 1;
 }
 
+/* Freeze card lift/spotlight while an inner popover is open so the hover
+   effect doesn't interfere with reading/clicking inside the popover. */
+.stock-card:has(.news-popover):hover {
+  transform: none;
+}
+
+.stock-card:has(.news-popover):hover::before,
+.stock-card:has(.news-popover):hover::after {
+  opacity: 0;
+}
+
 .stock-card > * {
   position: relative;
   z-index: 2;
