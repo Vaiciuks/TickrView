@@ -1754,14 +1754,20 @@ textarea {
   opacity: 1;
 }
 
-/* Freeze card lift/spotlight while an inner popover is open so the hover
+/* Freeze all hover effects while an inner popover is open so the hover
    effect doesn't interfere with reading/clicking inside the popover. */
-.stock-card:has(.news-popover):hover {
+.stock-card.stock-card--popover-open,
+.stock-card.stock-card--popover-open:hover {
   transform: none;
+  background: var(--card-gradient), var(--bg-card);
+  border-color: var(--border-subtle);
+  box-shadow: var(--card-shadow-rest);
 }
 
-.stock-card:has(.news-popover):hover::before,
-.stock-card:has(.news-popover):hover::after {
+.stock-card.stock-card--popover-open::before,
+.stock-card.stock-card--popover-open::after,
+.stock-card.stock-card--popover-open:hover::before,
+.stock-card.stock-card--popover-open:hover::after {
   opacity: 0;
 }
 

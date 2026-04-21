@@ -149,9 +149,9 @@ export default function StockCard({
   return (
     <article
       ref={cardRef}
-      className={`stock-card ${isFlipped ? "stock-card-flipped" : ""} ${flash || ""}${isSelected ? " stock-card-selected" : ""}${isFocused ? " stock-card-focused" : ""}`}
+      className={`stock-card ${isFlipped ? "stock-card-flipped" : ""} ${flash || ""}${isSelected ? " stock-card-selected" : ""}${isFocused ? " stock-card-focused" : ""}${showNews ? " stock-card--popover-open" : ""}`}
       onClick={handleCardClick}
-      onMouseMove={handleCardMouseMove}
+      onMouseMove={showNews ? undefined : handleCardMouseMove}
     >
       <div className="card-inner">
         {/* FRONT OF CARD */}
